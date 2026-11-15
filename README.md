@@ -14,9 +14,15 @@
 - 您只需將本手冊傳給您的 AI Agent（Antigravity、Claude Code、Codex、OpenCode 或 Cursor），並對它說這句話：
   > 🗣️ **「請讀取 `UNIVERSAL_AGENT_MCP_INSTALLER.md`，執行 `install_universal_mcps.py`，幫我自動把常用的 Google MCP 與環境裝好！」**
 
-### 步驟 2：點擊彈出的瀏覽器視窗（Google 授權）
-- 瀏覽器會自動彈出 Google 登入視窗。
-- 登入您的帳號，勾選全部權限並點「允許」，**Google 5 大核心功能（Drive 全文搜尋、Calendar 日曆、Classroom 課堂、Contacts 通訊錄、Sheets 試算表）** 就會全部自動開通！
+### 步驟 2：老師專屬「保姆級引導」開通 Google API（超簡單！）
+- 如果您覺得開通 Google API 很麻煩或看不懂，**千萬別緊張！您的 Agent 會全程溫柔引導您，一次只做一步**！
+- 直接在對話框對您的 Agent 說這句話：
+  > 🗣️ **「我想開通 Google API，但我數位能力比較弱，請啟動『保姆引導模式』，一步一步帶我做，一次只講一步，我說好了你再說下一步！」**
+- 您的 Agent 就會像專屬家教一樣：
+  1. 每次只給您一個直達網址。
+  2. 告訴您點哪個顏色的按鈕、填什麼字。
+  3. 您下載好檔案後，說一聲「我下載好了」，Agent 就會自動幫您搬移檔案，您連資料夾都不用開！
+  4. 瀏覽器彈出視窗點選「允許」，5 大功能（Drive、日曆、Classroom、通訊錄、試算表）即刻全數開通！
 
 ### 步驟 3：滑鼠雙擊解壓技能包，叫 Agent 一秒安裝
 1. 滑鼠直接雙擊解壓縮 **[`public-teacher-skills.zip`](public-teacher-skills.zip)**（Mac 或 Windows 都直接雙擊即可解出 `public-teacher-skills` 資料夾）。
