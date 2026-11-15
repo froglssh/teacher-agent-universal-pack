@@ -195,7 +195,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             origin: {
               type: 'string',
-              description: '出發地點名稱或地址（例如: 台北市立麗山高中、台北車站）',
+              description: '出發地點名稱或地址（例如: 台北車站、台北 101）',
             },
             destination: {
               type: 'string',

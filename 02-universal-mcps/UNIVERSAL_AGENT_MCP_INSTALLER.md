@@ -301,8 +301,11 @@ import {
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 
-const CLIENT_SECRET_PATH = '/Users/froglssh/.google-mcp/client_secret.json';
-const TOKEN_PATH = '/Users/froglssh/.google-mcp/tokens/apps_script_and_search_token.json';
+import os from 'os';
+
+const USER_HOME = process.env.HOME || process.env.USERPROFILE || os.homedir();
+const CLIENT_SECRET_PATH = path.join(USER_HOME, '.google-mcp', 'client_secret.json');
+const TOKEN_PATH = path.join(USER_HOME, '.google-mcp', 'tokens', 'apps_script_and_search_token.json');
 
 function getGoogleClients() {
   if (!fs.existsSync(CLIENT_SECRET_PATH)) {

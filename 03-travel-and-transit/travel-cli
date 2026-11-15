@@ -5,7 +5,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const HOME = process.env.HOME || '/Users/froglssh';
+import os from 'os';
+
+const HOME = process.env.HOME || process.env.USERPROFILE || os.homedir();
 const CONFIG_PATH = path.join(HOME, '.gemini', 'config', 'travel_transit_config.json');
 const TOKEN_CACHE_PATH = path.join(HOME, '.gemini', 'config', 'tdx_token_cache.json');
 
@@ -549,7 +551,7 @@ switch (command) {
     break;
   case 'route':
   case 'routes':
-    calculateRoute(args[1] || '台北市立麗山高中', args[2] || '台北市立松山高中', args[3] || 'DRIVE');
+    calculateRoute(args[1] || '台北車站', args[2] || '台北 101', args[3] || 'DRIVE');
     break;
   case 'rate':
   case 'rates':

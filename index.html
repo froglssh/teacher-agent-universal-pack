@@ -333,6 +333,27 @@
         border-radius: 0;
       }
     }
+
+    /* 第 3 頁專用：表格與清單略為壓縮，避免「Google 7 大」清單被裁切 */
+    #pg3 table th,
+    #pg3 table td {
+      padding: 3.5px 5px !important;
+      font-size: 12.35px !important;
+      line-height: 1.34 !important;
+    }
+    #pg3 .card {
+      font-size: 12.5px !important;
+    }
+    #pg3 .card ul {
+      line-height: 1.46 !important;
+    }
+    #pg3 h2 {
+      margin: 7px 0 5px 0 !important;
+      font-size: 15.8px !important;
+    }
+    #pg3 h1 {
+      margin-bottom: 8px !important;
+    }
   </style>
 </head>
 <body>
@@ -477,7 +498,7 @@
           2. 在對話框中對 Agent 說出這句話：
         </p>
         <div class="quote-box">🗣️ 老師咒語：「我已經解壓縮好 public-teacher-skills，請讀取裡面的說明，把 24 大教學技能全部安裝好！」</div>
-        <p style="font-size: 12.5px; color: #64748b;">↳ 24 大名師教學模組即刻全部就緒，對話框輸入 <code>/skills</code> 即可隨時使用。</p>
+        <p style="font-size: 12.5px; color: #64748b;">↳ 24 大教學模組即刻就緒；Antigravity／Claude Code／Hermes 都適用，輸入 <code>/skills</code> 即可使用。</p>
       </div>
     </div>
 
@@ -501,7 +522,7 @@
   </div>
 
   <!-- ==================== PAGE 3 ==================== -->
-  <div class="page">
+  <div class="page" id="pg3">
     <div class="header-bar">
       <span>教學與行政技能篇</span>
       <span>重點大字版 ‧ 第 3 頁</span>
