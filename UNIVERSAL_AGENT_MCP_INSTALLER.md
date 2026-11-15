@@ -109,38 +109,88 @@ pip install python-docx openpyxl python-pptx pypdf PyMuPDF qrcode[pil] markitdow
 
 ## 四、Google 生態系 5 大 API 開通與一次性全授權流程
 
-### 步驟 1：在 Google Cloud 建立專案
-1. 使用 Google 帳號前往 [Google Cloud Console](https://console.cloud.google.com/)。
-2. 點選左上方專案下拉選單，點擊 **「新增專案 (New Project)」**，取名為 `My-Teacher-Agent`。
+> 💡 **老師的行前安心定心丸**：
+> 1. **100% 完全免費**：不需要綁定信用卡、不需要輸入任何付款資訊，完全在 Google 官方提供的免費教育/個人配額內。
+> 2. **100% 個人隱私安全**：這是您在「自己的 Google 帳號下」建立的私有金鑰，所有授權與資料僅在您的電腦與 Google 伺服器之間流通，絕不會經過任何第三方。
+> 3. **免找隱藏資料夾**：下載憑證後，**完全不需要老師手動去找 `.google-mcp` 隱藏目錄**，只要叫 Agent 幫您搬移即可！
+> 4. 另提供獨立詳細手冊：[`GOOGLE_API_STEP_BY_STEP_GUIDE.md`](GOOGLE_API_STEP_BY_STEP_GUIDE.md)。
 
-### 步驟 2：啟用 5 大 API
-在左側選單進入 **「API 和服務」>「已啟用的 API 和服務」>「＋ 啟用 API 和服務」**，搜尋並點擊啟用：
-1. **Google Drive API**（雲端硬碟全文檢索、文件查找）
-2. **People API**（Google 聯絡人管理、電話簿批次匯入）
-3. **Google Calendar API**（Google 日曆排程）
-4. **Google Classroom API**（Google Classroom 課堂公告與課堂管理）
-5. **Google Sheets API**（試算表讀寫、成績計算、座位表）
+---
 
-### 步驟 3：設定 OAuth 同意畫面
-1. 點擊左側選單的 **「OAuth 同意畫面」**。
-2. 使用者類型（User Type）：一般 Gmail 選 **「外部」**；學校教育帳號選 **「內部」**（免審查，最推薦）。
-3. 填寫應用程式名稱（例如 `Teacher Agent Assistant`）與您的 Email，儲存並繼續。
-4. **測試使用者**（若選外部）：加入您自己的 Email。
+### 步驟 1：建立 Google Cloud 專案（約 30 秒）
+1. 點擊開啟直達網址 👉 **[Google Cloud 建立專案頁面](https://console.cloud.google.com/projectcreate)**。
+2. 登入您的 Google 帳號（個人 Gmail 或學校教育帳號 `@school.tp.edu.tw` 均可）。
+3. 看到「專案名稱 (Project Name)」欄位，輸入：`Teacher-Agent`。
+4. 機構與位置保持預設，直接點擊下方藍色按鈕 **「建立 (CREATE)」**。
+5. （等待約 5~10 秒，頁面右上角通知鈴鐺會顯示「專案建立成功」）。
 
-### 步驟 4：建立並下載憑證（`client_secret.json`）
-1. 點選 **「憑證」>「＋ 建立憑證」>「OAuth 用戶端 ID」**。
-2. 類型選取：**「桌面應用程式 (Desktop App)」**，名稱填 `Teacher Client`。
-3. 下載生成的 JSON 檔案，重命名為 **`client_secret.json`**。
-4. 存放在家目錄：
-   * **macOS / Linux**：`~/.google-mcp/client_secret.json`
-   * **Windows**：`C:\Users\<您的使用者名稱>\.google-mcp\client_secret.json`
+---
 
-### 步驟 5：執行「一次到位」大滿貫授權腳本
-在終端機中執行：
-```bash
-node ~/.google-mcp/setup_google_auth.mjs
-```
-瀏覽器會自動彈出 Google 登入視窗，勾選全部權限並點「允許」，**所有 5 大功能的 Token 將一次全部授權就緒**！
+### 步驟 2：啟用 5 大核心教學 API（約 2 分鐘）
+點擊開啟直達網址 👉 **[Google API 服務庫 (API Library)](https://console.cloud.google.com/apis/library)**。
+
+在中間上方的搜尋框，依序搜尋以下 5 個 API，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
+1. **Google Drive API**（搜尋 `Google Drive API`，用於雲端硬碟全文極速秒搜）
+2. **People API**（搜尋 `People API`，用於 Google 聯絡人與家長通訊錄管理）
+3. **Google Calendar API**（搜尋 `Google Calendar API`，用於日曆行程自動排程）
+4. **Google Classroom API**（搜尋 `Google Classroom API`，用於課堂公告與作業查詢）
+5. **Google Sheets API**（搜尋 `Google Sheets API`，用於試算表讀寫與成績處理）
+
+*(每按一次「啟用」後，點瀏覽器上一頁或左上角「←」回到 API 服務庫搜尋下一個，5 個都按「啟用」即可)*。
+
+---
+
+### 步驟 3：設定 OAuth 同意畫面（約 1 分鐘）
+點擊開啟直達網址 👉 **[OAuth 同意畫面設定頁](https://console.cloud.google.com/apis/credentials/consent)**。
+
+1. **選擇使用者類型 (User Type)**：
+   * 學校教育帳號（有自己網域）：請選 **「內部 (Internal)」**（最方便，免審查）。
+   * 一般個人 Gmail（`@gmail.com`）：請選 **「外部 (External)」**。
+   * 點選 **「建立 (CREATE)」**。
+2. **填寫應用程式基本資訊**（只需填 3 處，其餘全部留空）：
+   * **應用程式名稱 (App name)**：輸入 `Teacher Desktop Agent`
+   * **使用者支援電子郵件 (User support email)**：選您自己的 Email
+   * **開發人員聯絡資訊 (Developer contact information)**：填入您自己的 Email
+   * 點擊最下方藍色按鈕 **「儲存並繼續 (SAVE AND CONTINUE)」**。
+3. **範圍 (Scopes)**：完全不用動，直接拉到最下方點擊 **「儲存並繼續」**。
+4. **測試使用者 (Test users)**（僅「外部」Gmail 才需要）：
+   * 點擊 **「＋ ADD USERS」**，輸入您自己的 Gmail 地址，按「儲存」，再點「儲存並繼續」。
+
+---
+
+### 步驟 4：建立桌面憑證並下載 JSON 檔案（約 30 秒）
+點擊開啟直達網址 👉 **[憑證管理頁面 (Credentials)](https://console.cloud.google.com/apis/credentials)**。
+
+1. 點擊頂端的 **「＋ 建立憑證 (CREATE CREDENTIALS)」**，在下拉選單選擇 **「OAuth 用戶端 ID (OAuth client ID)」**。
+2. 應用程式類型選取：**「桌面應用程式 (Desktop App)」**。
+3. 名稱填寫 `Teacher Client`，點擊右下角藍色按鈕 **「建立 (CREATE)」**。
+4. 彈出「OAuth 用戶端已建立」視窗，點擊右側的 **「下載 JSON (DOWNLOAD JSON)」** 按鈕。
+5. 此時您的瀏覽器會下載一個類似 `client_secret_214096452487-xxxx.json` 的檔案到電腦的「下載」資料夾。
+
+---
+
+### 步驟 5：免找隱藏資料夾！叫 Agent 幫您自動搬移
+很多老師找不到 `.google-mcp` 隱藏資料夾，這一步**完全不要手動去找！**
+
+請直接回到您的 AI Agent 對話框，對 Agent 說這句話：
+> 🗣️ **「我剛剛下載了 Google 的 client secret 檔案在『下載 (Downloads)』資料夾，請幫我找到它，重命名為 `client_secret.json` 並搬到我的 `~/.google-mcp/` 目錄中！」**
+
+Agent 就會全自動在電腦中找到該檔案並搬移歸位！
+
+---
+
+### 步驟 6：最後一步！點擊瀏覽器完成「全滿貫授權」
+檔案放好後，對 Agent 說：
+> 🗣️ **「請幫我執行 `setup_google_auth.mjs` 進行 Google 授權！」**
+
+1. 電腦瀏覽器會自動彈出 Google 登入視窗。
+2. 登入您的 Google 帳號。
+3. ⚠️ **重要避坑提示**：若畫面出現「*Google 尚未驗證這個應用程式 (Google hasn't verified this app)*」：
+   * **不要害怕！** 這是因為這個應用程式是您剛才在自己帳號下建立的私有工具，Google 官方當然沒有公開驗證。
+   * 請點擊左下角灰色的 **「進階 (Advanced)」**。
+   * 點擊最下方的 **「前往 Teacher Desktop Agent（安全）(Go to ... (unsafe))」**。
+4. 畫面會列出本次申請的權限（雲端硬碟、聯絡人、日曆、課堂 Classroom 等），請**勾選全部核取方塊**，點擊 **「繼續 / 允許」**。
+5. 瀏覽器顯示 **「🎉 Google 全功能授權成功！請關閉此分頁」**。即刻大功告成！
 
 ---
 
