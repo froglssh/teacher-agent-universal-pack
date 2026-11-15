@@ -1,0 +1,1 @@
+{"name":"tdx_status","description":"檢查台灣交通部 TDX (運輸資料流通服務) API 憑證設定狀態，並提供註冊與串接指引。","parameters":{"properties":{},"type":"object"}}

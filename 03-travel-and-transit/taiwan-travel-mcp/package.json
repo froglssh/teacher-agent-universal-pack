@@ -1,0 +1,10 @@
+{
+  "name": "taiwan-travel-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP server for Taiwan Transit (TDX) and Global Exchange Rates",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
