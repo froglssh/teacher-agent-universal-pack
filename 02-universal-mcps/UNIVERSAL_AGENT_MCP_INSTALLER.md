@@ -98,7 +98,7 @@
 1. [零基礎底座環境安裝（Node.js / Python / Git）](#一零基礎底座環境安裝node-與-python)
 2. [免 API Key 工具（裝完立即可用）](#二免-api-key-工具完全零設定裝完立刻能用)
 3. [教學檔案處理核心工具包（Word / Excel / PPT / PDF 神器）](#三教學檔案處理核心工具包word--excel--ppt--pdf-神器)
-4. [Google 生態系 5 大 API 開通與一次性全授權流程](#四google-生態系-5-大-api-開通與一次性全授權流程)
+4. [Google 生態系 6 大 API 開通與一次性全授權流程](#四google-生態系-5-大-api-開通與一次性全授權流程)
 5. [Google 核心技能原始碼（Drive 搜尋 ＋ 日曆 ＋ 課堂）](#五google-核心技能原始碼drive-搜尋--日曆--課堂-mcp)
 6. [Google 聯絡人管理技能原始碼（Google Contacts MCP）](#六google-聯絡人管理技能原始碼google-contacts-mcp)
 7. [Google 5 大功能狀態自動健檢腳本](#七google-5-大功能狀態自動健檢腳本)
@@ -188,7 +188,7 @@ pip install python-docx openpyxl python-pptx pypdf PyMuPDF qrcode[pil] markitdow
 
 ---
 
-## 四、Google 生態系 5 大 API 開通與一次性全授權流程
+## 四、Google 生態系 6 大 API 開通與一次性全授權流程
 
 > 💡 **老師的行前安心定心丸**：
 > 1. **100% 完全免費**：不需要綁定信用卡、不需要輸入任何付款資訊，完全在 Google 官方提供的免費教育/個人配額內。
@@ -207,10 +207,10 @@ pip install python-docx openpyxl python-pptx pypdf PyMuPDF qrcode[pil] markitdow
 
 ---
 
-### 步驟 2：啟用 5 大核心教學 API（約 2 分鐘）
+### 步驟 2：啟用 6 大核心教學 API（約 2 分鐘）
 點擊開啟直達網址 👉 **[Google API 服務庫 (API Library)](https://console.cloud.google.com/apis/library)**。
 
-在中間上方的搜尋框，依序搜尋以下 5 個 API，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
+在中間上方的搜尋框，依序搜尋以下 6 個 API，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
 1. **Google Drive API**（搜尋 `Google Drive API`，用於雲端硬碟全文極速秒搜）
 2. **People API**（搜尋 `People API`，用於 Google 聯絡人與家長通訊錄管理）
 3. **Google Calendar API**（搜尋 `Google Calendar API`，用於日曆行程自動排程）
@@ -608,6 +608,12 @@ test();
 ```
 
 ---
+
+
+### Google Tasks 待辦清單（例行備忘與行政排程）
+- 🗣️ **老師咒語 1（新增待辦）**：「請幫我在 Google Tasks 建立一個待辦事項：『下週一早自修收高一自主學習計畫書』，設定截止日為下週一。」
+- 🗣️ **老師咒語 2（查詢待辦）**：「列出我目前所有尚未完成的 Google Tasks 待辦工作。」
+- 🗣️ **老師咒語 3（完成事項）**：「我已經收齊高一自主學習計畫書了，請幫我將該待辦標記為已完成。」
 
 ## 八、Google NotebookLM MCP 串接教學
 

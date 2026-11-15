@@ -77,6 +77,7 @@ def install_npm_packages():
         "padlet-mcp",
         "@canva/cli",
         "@playwright/mcp",
+        "@scottie-will/google-tasks-mcp",
         "googleapis",
         "google-auth-library"
     ]
@@ -115,6 +116,7 @@ const oauth2Client = new OAuth2Client(installed.client_id, installed.client_secr
 
 const scopes = [
   'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/tasks',
   'https://www.googleapis.com/auth/contacts',
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
@@ -172,6 +174,21 @@ def get_standard_mcps():
         mcps["google-suite"] = { "command": node_bin, "args": [str(gas_script)] }
     if contacts_script.exists():
         mcps["google-contacts"] = { "command": node_bin, "args": [str(contacts_script)] }
+    tasks_script = MCP_DIR / "node_modules" / "@scottie-will" / "google-tasks-mcp" / "build" / "index.js"
+    secret_path = GOOGLE_MCP_DIR / "client_secret.json"
+    if tasks_script.exists():
+        mcps["google-tasks"] = {
+            "command": node_bin,
+            "args": [str(tasks_script)],
+            "env": { "GOOGLE_OAUTH_CREDENTIALS": str(secret_path) }
+        }
+    else:
+        mcps["google-tasks"] = {
+            "command": npx_bin,
+            "args": ["-y", "@scottie-will/google-tasks-mcp"],
+            "env": { "GOOGLE_OAUTH_CREDENTIALS": str(secret_path) }
+        }
+
 
     return mcps
 
