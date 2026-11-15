@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart TD
-    S1["步驟 1：建立專案<br>(取名 Teacher-Agent)"] --> S2["步驟 2：啟用 6 大 API<br>(Drive, People, Calendar, Classroom, Sheets, Tasks)"]
+    S1["步驟 1：建立專案<br>(取名 Teacher-Agent)"] --> S2["步驟 2：啟用 7 大 API<br>(Drive, People, Calendar, Classroom, Sheets, Tasks, Meet)"]
     S2 --> S3["步驟 3：設定 OAuth 同意畫面<br>(填寫名稱與 Email)"]
     S3 --> S4["步驟 4：建立桌面憑證並下載<br>(下載 JSON 檔案)"]
     S4 --> S5["步驟 5：叫 Agent 自動歸位<br>(Agent 自動放入 .google-mcp)"]
@@ -37,11 +37,11 @@ flowchart TD
 
 ---
 
-## 步驟 2：啟用 6 大核心教學 API（約 2 分鐘）
+## 步驟 2：啟用 7 大核心教學 API（約 2 分鐘）
 
 點擊開啟直達網址 👉 **[Google API 服務庫 (API Library)](https://console.cloud.google.com/apis/library)**。
 
-在中間上方的搜尋框，依序搜尋以下 6 個 API，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
+在中間上方的搜尋框，依序搜尋以下 7 個 API，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
 
 | 次序 | 請在搜尋框輸入 | 點進去後的名稱 | 功能說明 |
 | :---: | :--- | :--- | :--- |
@@ -51,8 +51,9 @@ flowchart TD
 | **4** | `Google Classroom API`| **Google Classroom API** | Classroom 課堂公告與作業查詢 |
 | **5** | `Google Sheets API` | **Google Sheets API** | 試算表讀寫與成績處理 |
 | **6** | `Google Tasks API`  | **Google Tasks API**  | 待辦事項與工作清單自動化排程 |
+| **7** | `Google Meet API`   | **Google Meet API**   | 視訊會議自動建立、控管與逐字稿存取 |
 
-*(每按一次「啟用」後，點左上角「←」回到 API 服務庫搜尋下一個，6 個都按「啟用」即可)*。
+*(每按一次「啟用」後，點左上角「←」回到 API 服務庫搜尋下一個，7 個都按「啟用」即可)*。
 
 ---
 
@@ -113,9 +114,9 @@ Agent 就會全自動在電腦中找到該檔案並搬移歸位！
    * **不要害怕！** 這是因為這個應用程式是您剛才在自己帳號下建立的，Google 官方當然沒有公開驗證。
    * 請點擊左下角灰色的 **「進階 (Advanced)」**。
    * 點擊最下方的 **「前往 Teacher Desktop Agent（安全）(Go to ... (unsafe))」**。
-4. 畫面會列出本次申請的權限（雲端硬碟、聯絡人、日曆、待辦事項 Tasks、課堂 Classroom 等），請**勾選全部核取方塊**，點擊 **「繼續 / 允許」**。
+4. 畫面會列出本次申請的權限（雲端硬碟、聯絡人、日曆、待辦事項 Tasks、Google Meet 會議、課堂 Classroom 等），請**勾選全部核取方塊**，點擊 **「繼續 / 允許」**。
 5. 瀏覽器顯示 **「🎉 Google 全功能授權成功！請關閉此分頁」**。
 
 ---
 
-恭喜您！大功告成！您電腦上的 AI Agent 現在已經具備完整的 Google 雲端極速搜尋、行事曆排程、Classroom 課堂作業抓取、Google Tasks 待辦排程與通訊錄管理能力！
+恭喜您！大功告成！您電腦上的 AI Agent 現在已經具備完整的 Google 雲端極速搜尋、行事曆排程、Classroom 課堂作業抓取、Google Tasks 待辦排程、Google Meet 視訊開會與通訊錄管理能力！

@@ -99,7 +99,7 @@
 2. [免 API Key 工具（裝完立即可用）](#二免-api-key-工具完全零設定裝完立刻能用)
 3. [教學檔案處理核心工具包（Word / Excel / PPT / PDF 神器）](#三教學檔案處理核心工具包word--excel--ppt--pdf-神器)
 4. [Google 生態系 6 大 API 開通與一次性全授權流程](#四google-生態系-5-大-api-開通與一次性全授權流程)
-5. [Google 核心技能原始碼（Drive 搜尋 ＋ 日曆 ＋ 課堂）](#五google-核心技能原始碼drive-搜尋--日曆--課堂-mcp)
+5. [Google 核心技能原始碼（Drive 搜尋 ＋ 日曆 ＋ 課堂 ＋ Meet 視訊）](#五google-核心技能原始碼drive-搜尋--日曆--課堂--meet-視訊開會-mcp)
 6. [Google 聯絡人管理技能原始碼（Google Contacts MCP）](#六google-聯絡人管理技能原始碼google-contacts-mcp)
 7. [Google 5 大功能狀態自動健檢腳本](#七google-5-大功能狀態自動健檢腳本)
 8. [Google NotebookLM MCP 串接教學](#八google-notebooklm-mcp-串接教學)
@@ -275,14 +275,18 @@ Agent 就會全自動在電腦中找到該檔案並搬移歸位！
 
 ---
 
-## 五、Google 核心技能原始碼（Drive 搜尋 ＋ 日曆 ＋ 課堂 MCP）
+## 五、Google 核心技能原始碼（Drive 搜尋 ＋ 日曆 ＋ 課堂 ＋ Meet 視訊開會 MCP）
 
 請將以下程式碼存為 `~/.google-mcp/google-apps-script/index.js`，此腳本包含：
 1. **`search_drive_files`**：雲端硬碟全文極速秒搜
 2. **`list_calendar_events`**：Google 日曆行程查詢
-3. **`create_calendar_event`**：Google 日曆行程新增
-4. **`list_classroom_courses`**：Classroom 課堂班級讀取
-5. **`list_classroom_announcements`**：Classroom 課堂公告讀取
+3. **`create_calendar_event`**：Google 日曆行程新增（**含 Google Meet 官方視訊會議自動雙向同步**）
+4. **`create_meet_space`**：一鍵建立 Google Meet 專屬視訊會議室
+5. **`get_meet_space`**：查詢 Meet 會議空間設定與即時狀態
+6. **`list_meet_conference_records`**：列出近期視訊會議紀錄
+7. **`list_meet_transcripts`**：取得 Google Meet 會議 AI 逐字稿紀錄
+8. **`list_classroom_courses`**：Classroom 課堂班級讀取
+9. **`list_classroom_announcements`**：Classroom 課堂公告讀取
 
 ```javascript
 #!/usr/bin/env node
@@ -290,160 +294,685 @@ import fs from 'fs';
 import path from 'path';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 
-const HOME = process.env.HOME || process.env.USERPROFILE;
-const CLIENT_SECRET_PATH = path.join(HOME, '.google-mcp', 'client_secret.json');
-const TOKEN_PATH = path.join(HOME, '.google-mcp', 'tokens', 'apps_script_and_search_token.json');
+const CLIENT_SECRET_PATH = '/Users/froglssh/.google-mcp/client_secret.json';
+const TOKEN_PATH = '/Users/froglssh/.google-mcp/tokens/apps_script_and_search_token.json';
 
 function getGoogleClients() {
-  if (!fs.existsSync(CLIENT_SECRET_PATH)) throw new Error(`找不到憑證檔案: ${CLIENT_SECRET_PATH}`);
-  if (!fs.existsSync(TOKEN_PATH)) throw new Error(`找不到 Token 檔案: ${TOKEN_PATH}`);
+  if (!fs.existsSync(CLIENT_SECRET_PATH)) {
+    throw new Error(`Client secret file not found: ${CLIENT_SECRET_PATH}`);
+  }
+  if (!fs.existsSync(TOKEN_PATH)) {
+    throw new Error(`Token file not found: ${TOKEN_PATH}. Please run auth.js first.`);
+  }
 
   const credentials = JSON.parse(fs.readFileSync(CLIENT_SECRET_PATH, 'utf8'));
   const installed = credentials.installed || credentials.web;
+  const clientId = installed.client_id;
+  const clientSecret = installed.client_secret;
+
   const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
 
-  const oauth2Client = new OAuth2Client(installed.client_id, installed.client_secret);
+  const oauth2Client = new OAuth2Client(clientId, clientSecret);
   oauth2Client.setCredentials(tokens);
 
   oauth2Client.on('tokens', (newTokens) => {
-    const updated = { ...tokens, ...newTokens };
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(updated, null, 2), 'utf8');
+    const updatedTokens = { ...tokens, ...newTokens };
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(updatedTokens, null, 2), 'utf8');
   });
 
+  const script = google.script({ version: 'v1', auth: oauth2Client });
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const cloudsearch = google.cloudsearch({ version: 'v1', auth: oauth2Client });
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
   const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
-  return { drive, calendar, classroom };
+  const meet = google.meet({ version: 'v2', auth: oauth2Client });
+
+  return { script, drive, cloudsearch, calendar, classroom, meet };
 }
 
-const server = new Server({ name: 'google-suite-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
-
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: 'search_drive_files',
-      description: '極速全文檢索 Google Drive 中的檔案（文件、試算表、簡報、PDF），返回檔名、連結與修改日期。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: '搜尋關鍵字' },
-          pageSize: { type: 'number', default: 20, description: '返回數量上限' }
-        },
-        required: ['query']
-      }
-    },
-    {
-      name: 'list_calendar_events',
-      description: '列出 Google 日曆的行程活動。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          maxResults: { type: 'number', default: 10, description: '最多取得筆數' },
-          timeMin: { type: 'string', description: '開始時間 (ISO 8601，預設為現在)' }
+const TOOLS = [
+  {
+    name: 'create_meet_space',
+    description: '建立一個新的 Google Meet 視訊會議空間，產生專屬 Meet 連結與代碼。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        accessType: {
+          type: 'string',
+          description: '會議存取層級：OPEN (任何人可加入)、TRUSTED (同機構/已受邀者直接加入)、RESTRICTED (必須主辦人核准)。預設為 TRUSTED。',
+          enum: ['OPEN', 'TRUSTED', 'RESTRICTED']
         }
       }
-    },
-    {
-      name: 'create_calendar_event',
-      description: '在 Google 日曆中新增行程活動。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          summary: { type: 'string', description: '行程標題' },
-          description: { type: 'string', description: '詳細備註' },
-          start: { type: 'string', description: '開始時間 (例如 2026-11-15T14:00:00+08:00 或 2026-11-15)' },
-          end: { type: 'string', description: '結束時間 (例如 2026-11-15T15:00:00+08:00 或 2026-11-15)' },
-          location: { type: 'string', description: '地點' }
-        },
-        required: ['summary', 'start', 'end']
-      }
-    },
-    {
-      name: 'list_classroom_courses',
-      description: '列出 Google Classroom 中的課堂班級清單。',
-      inputSchema: {
-        type: 'object',
-        properties: { pageSize: { type: 'number', default: 10, description: '最多取得課堂數' } }
-      }
-    },
-    {
-      name: 'list_classroom_announcements',
-      description: '列出指定 Classroom 課堂中的公告事項。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          courseId: { type: 'string', description: '課堂 ID' },
-          pageSize: { type: 'number', default: 10, description: '最多取得公告數' }
-        },
-        required: ['courseId']
+    }
+  },
+  {
+    name: 'get_meet_space',
+    description: '取得特定 Google Meet 會議空間的詳細設定與狀態。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: '會議空間名稱，格式如 spaces/s-xxxx-xxxx 或直接填寫會議代碼。'
+        }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'list_meet_conference_records',
+    description: '列出近期的 Google Meet 會議記錄（包含開始結束時間、會議 ID）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pageSize: {
+          type: 'number',
+          description: '回傳的會議記錄筆數，預設為 10。'
+        }
       }
     }
-  ]
-}));
+  },
+  {
+    name: 'list_meet_transcripts',
+    description: '取得指定 Google Meet 會議的語音轉錄逐字稿 (Transcripts) 紀錄。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        parent: {
+          type: 'string',
+          description: '會議記錄資源名稱，格式如 conferenceRecords/xxxx。'
+        }
+      },
+      required: ['parent']
+    }
+  },
+  {
+    name: 'search_drive_files',
+    description: 'Fast full-text search across Google Drive files, Google Docs, Sheets, Slides, and PDFs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search keyword (matches file name or content text).' },
+        mimeType: { type: 'string', description: 'Filter by file type (e.g. document, spreadsheet, presentation, pdf, folder).' },
+        pageSize: { type: 'number', default: 20, description: 'Number of results to return (max 50).' }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'cloud_search',
+    description: 'Searches across Google Workspace using the Google Cloud Search API.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query string.' },
+        pageSize: { type: 'number', default: 10, description: 'Number of results.' }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'create_script_project',
+    description: 'Creates a new Google Apps Script project (standalone or container-bound to a Sheet/Doc).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Project title.' },
+        parentId: { type: 'string', description: 'Optional ID of the Google Doc, Sheet, or Form to bind this script to.' }
+      },
+      required: ['title']
+    }
+  },
+  {
+    name: 'get_script_content',
+    description: 'Retrieves all source code files (.gs, .html) of a Google Apps Script project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scriptId: { type: 'string', description: 'The Apps Script project ID.' }
+      },
+      required: ['scriptId']
+    }
+  },
+  {
+    name: 'update_script_content',
+    description: 'Updates the code files (.gs, .html) of an existing Google Apps Script project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scriptId: { type: 'string', description: 'The Apps Script project ID.' },
+        files: {
+          type: 'array',
+          description: 'Array of files to put into the project.',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'File name without extension (e.g. Code, Sidebar).' },
+              type: { type: 'string', enum: ['SERVER_JS', 'HTML'], description: 'SERVER_JS for .gs, HTML for .html' },
+              source: { type: 'string', description: 'Source code content.' }
+            },
+            required: ['name', 'type', 'source']
+          }
+        }
+      },
+      required: ['scriptId', 'files']
+    }
+  },
+  {
+    name: 'list_deployments',
+    description: 'Lists all deployments of a Google Apps Script project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scriptId: { type: 'string', description: 'The Apps Script project ID.' }
+      },
+      required: ['scriptId']
+    }
+  },
+  {
+    name: 'list_calendar_events',
+    description: '列出 Google 日曆的行程事件（預設列出未來近期 10 個活動）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        maxResults: { type: 'number', default: 10, description: '最多取得筆數' },
+        timeMin: { type: 'string', description: '開始時間 (ISO 8601，預設為現在)' }
+      }
+    }
+  },
+  {
+    name: 'create_calendar_event',
+    description: '在 Google 日曆中新增行程活動。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string', description: '行程標題' },
+        description: { type: 'string', description: '詳細備註說明' },
+        start: { type: 'string', description: '開始時間 (例如 2026-11-15T14:00:00+08:00 或 2026-11-15)' },
+        end: { type: 'string', description: '結束時間 (例如 2026-11-15T15:00:00+08:00 或 2026-11-15)' },
+        location: { type: 'string', description: '地點' }
+      },
+      required: ['summary', 'start', 'end']
+    }
+  },
+  {
+    name: 'list_classroom_courses',
+    description: '列出目前 Google Classroom 中的所有課堂班級清單。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pageSize: { type: 'number', default: 10, description: '最多取得課堂數' }
+      }
+    }
+  },
+  {
+    name: 'list_classroom_announcements',
+    description: '列出指定 Google Classroom 課堂中的公告事項。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        courseId: { type: 'string', description: 'Classroom 課堂 ID' },
+        pageSize: { type: 'number', default: 10, description: '最多取得公告數' }
+      },
+      required: ['courseId']
+    }
+  }
+];
+
+const server = new Server(
+  {
+    name: 'google-apps-script',
+    version: '1.0.0',
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return { tools: TOOLS };
+});
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args = {} } = request.params;
-  const { drive, calendar, classroom } = getGoogleClients();
+  try {
+    const { script, drive, cloudsearch, calendar, classroom } = getGoogleClients();
 
-  if (name === 'search_drive_files') {
-    const cleanQ = args.query.replace(/'/g, "\\'");
-    const q = `trashed = false and (name contains '${cleanQ}' or fullText contains '${cleanQ}')`;
-    const res = await drive.files.list({ q, pageSize: args.pageSize || 20, fields: 'files(id, name, mimeType, modifiedTime, webViewLink)', orderBy: 'modifiedTime desc' });
-    const files = res.data.files || [];
-    if (files.length === 0) return { content: [{ type: 'text', text: `未找到符合 "${args.query}" 的雲端檔案。` }] };
-    const lines = files.map((f, i) => `[${i+1}] **${f.name}**\n  - 類型: ${f.mimeType}\n  - 修改時間: ${f.modifiedTime}\n  - 連結: ${f.webViewLink}`);
-    return { content: [{ type: 'text', text: `搜尋 "${args.query}" 找到 ${files.length} 個檔案：\n\n` + lines.join('\n\n') }] };
-  }
+    if (name === 'create_meet_space') {
+      const config = {};
+      if (args.accessType) {
+        config.accessType = args.accessType;
+      }
+      const res = await meet.spaces.create({
+        requestBody: { config }
+      });
+      const space = res.data;
+      return {
+        content: [{
+          type: 'text',
+          text: `🎉 成功建立 Google Meet 會議空間！
 
-  if (name === 'list_calendar_events') {
-    const timeMin = args.timeMin || (new Date()).toISOString();
-    const res = await calendar.events.list({ calendarId: 'primary', timeMin, maxResults: args.maxResults || 10, singleEvents: true, orderBy: 'startTime' });
-    const events = res.data.items || [];
-    if (events.length === 0) return { content: [{ type: 'text', text: '近期無任何日曆行程。' }] };
-    const lines = events.map((ev, i) => `[${i+1}] **${ev.summary || '未命名'}**\n  - 時間: ${ev.start?.dateTime || ev.start?.date} ~ ${ev.end?.dateTime || ev.end?.date}\n  - 連結: ${ev.htmlLink}`);
-    return { content: [{ type: 'text', text: `近期 ${events.length} 個行程活動：\n\n` + lines.join('\n\n') }] };
-  }
+` +
+                `• **會議連結**: ${space.meetingUri}
+` +
+                `• **會議代碼**: \`${space.meetingCode}\`
+` +
+                `• **資源識別碼**: \`${space.name}\`
+` +
+                `• **存取模式**: ${space.config?.accessType || '預設'}
 
-  if (name === 'create_calendar_event') {
-    const reqBody = {
-      summary: args.summary,
-      description: args.description || '',
-      location: args.location || '',
-      start: args.start.includes('T') ? { dateTime: args.start } : { date: args.start },
-      end: args.end.includes('T') ? { dateTime: args.end } : { date: args.end }
+` +
+                `老師可以直接將此連結分享給學生或參與者加入！`
+        }]
+      };
+    }
+
+    if (name === 'get_meet_space') {
+      let spaceName = args.name;
+      if (!spaceName.startsWith('spaces/')) {
+        spaceName = 'spaces/' + spaceName;
+      }
+      const res = await meet.spaces.get({ name: spaceName });
+      const space = res.data;
+      return {
+        content: [{
+          type: 'text',
+          text: `📋 **Google Meet 會議空間詳情**：
+
+` +
+                `• **會議連結**: ${space.meetingUri}
+` +
+                `• **會議代碼**: \`${space.meetingCode}\`
+` +
+                `• **狀態/模式**: ${space.config?.accessType || '一般'}
+` +
+                `• **有效會議**: ${space.activeConference ? space.activeConference.conferenceRecord : '目前無進行中會議'}`
+        }]
+      };
+    }
+
+    if (name === 'list_meet_conference_records') {
+      const res = await meet.conferenceRecords.list({
+        pageSize: args.pageSize || 10
+      });
+      const records = res.data.conferenceRecords || [];
+      if (records.length === 0) {
+        return { content: [{ type: 'text', text: '未找到近期的 Google Meet 會議記錄。
+*(請確認會議主辦人為此 Google 帳號，且會議有正常開始與結束)*' }] };
+      }
+      const lines = records.map((r, i) => {
+        return `[${i + 1}] **${r.space || '會議空間'}**
+  - 會議記錄 ID: \`${r.name}\`
+  - 開始時間: ${r.startTime || '未知'}
+  - 結束時間: ${r.endTime || '進行中'}`;
+      });
+      return { content: [{ type: 'text', text: `共讀取到 ${records.length} 筆近期會議記錄：
+
+` + lines.join('
+
+') }] };
+    }
+
+    if (name === 'list_meet_transcripts') {
+      const res = await meet.conferenceRecords.transcripts.list({
+        parent: args.parent
+      });
+      const transcripts = res.data.transcripts || [];
+      if (transcripts.length === 0) {
+        return { content: [{ type: 'text', text: `該會議記錄 (\`${args.parent}\`) 未找到任何語音轉錄逐字稿。
+*(會議中需有手動開啟轉錄或主辦人有錄音轉錄權限)*' }] };
+      }
+      const lines = transcripts.map((t, i) => {
+        return `[${i + 1}] 逐字稿 ID: \`${t.name}\` (狀態: ${t.state || '完成'})`;
+      });
+      return { content: [{ type: 'text', text: `共找到 ${transcripts.length} 份轉錄記錄：
+
+` + lines.join('
+') }] };
+    }
+
+    if (name === 'search_drive_files') {
+      let q = `trashed = false and (name contains '${args.query}' or fullText contains '${args.query}')`;
+      if (args.mimeType) {
+        if (args.mimeType === 'document') q += ` and mimeType = 'application/vnd.google-apps.document'`;
+        else if (args.mimeType === 'spreadsheet') q += ` and mimeType = 'application/vnd.google-apps.spreadsheet'`;
+        else if (args.mimeType === 'presentation') q += ` and mimeType = 'application/vnd.google-apps.presentation'`;
+        else if (args.mimeType === 'folder') q += ` and mimeType = 'application/vnd.google-apps.folder'`;
+        else if (args.mimeType === 'pdf') q += ` and mimeType = 'application/pdf'`;
+        else q += ` and mimeType contains '${args.mimeType}'`;
+      }
+
+      const res = await drive.files.list({
+        q,
+        pageSize: args.pageSize || 20,
+        fields: 'files(id, name, mimeType, modifiedTime, webViewLink, owners, description, size)'
+      });
+
+      const files = res.data.files || [];
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `搜尋 "${args.query}" 找到 ${files.length} 個雲端檔案：
+
+` +
+              files.map((f, i) => `[${i + 1}] **${f.name}**
+  - 類型: ${f.mimeType}
+  - 修改時間: ${f.modifiedTime}
+  - 連結: ${f.webViewLink || '無'}
+  - ID: \`${f.id}\``).join('
+
+')
+          }
+        ],
+        structuredContent: { files }
+      };
+    }
+
+    if (name === 'cloud_search') {
+      try {
+        const res = await cloudsearch.query.search({
+          requestBody: {
+            query: args.query,
+            pageSize: args.pageSize || 10,
+            requestOptions: {
+              searchApplicationId: 'searchapplications/default'
+            }
+          }
+        });
+        const results = res.data.response?.results || [];
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Cloud Search 搜尋 "${args.query}" 共 ${results.length} 筆結果：
+
+` +
+                results.map((r, i) => `[${i + 1}] **${r.title || '無標題'}**
+  - 來源: ${r.metadata?.source?.name || 'Workspace'}
+  - 網址: ${r.url || '無'}
+  - 摘要: ${r.snippet?.snippet || ''}`).join('
+
+')
+            }
+          ],
+          structuredContent: res.data
+        };
+      } catch (csError) {
+        // 若網域未啟用 Search Application，自動降級建議使用 search_drive_files
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Cloud Search API 回傳: ${csError.message}
+提示：若網域尚未配置 searchapplications/default，建議使用 'search_drive_files' 進行全文雲端硬碟搜尋。`
+            }
+          ],
+          isError: true
+        };
+      }
+    }
+
+    if (name === 'create_script_project') {
+      const res = await script.projects.create({
+        requestBody: {
+          title: args.title,
+          parentId: args.parentId || undefined
+        }
+      });
+      const data = res.data;
+      const editorUrl = `https://script.google.com/d/${data.scriptId}/edit`;
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ 成功建立 Google Apps Script 專案！
+• 專案名稱: **${data.title}**
+• Script ID: \`${data.scriptId}\`
+• 編輯連結: ${editorUrl}`
+          }
+        ],
+        structuredContent: { ...data, editorUrl }
+      };
+    }
+
+    if (name === 'get_script_content') {
+      const res = await script.projects.getContent({
+        scriptId: args.scriptId
+      });
+      const files = res.data.files || [];
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `專案代碼檔案列表（共 ${files.length} 個檔案）：
+
+` +
+              files.map(f => `### 📄 ${f.name} (${f.type})
+\`\`\`javascript
+${f.source}
+\`\`\``).join('
+
+')
+          }
+        ],
+        structuredContent: res.data
+      };
+    }
+
+    if (name === 'update_script_content') {
+      // 確保至少包含 appsscript.json 清單檔案
+      const current = await script.projects.getContent({ scriptId: args.scriptId });
+      const currentFiles = current.data.files || [];
+      const manifestFile = currentFiles.find(f => f.name === 'appsscript' && f.type === 'JSON');
+
+      const filesToPut = [...args.files];
+      if (manifestFile && !filesToPut.some(f => f.name === 'appsscript')) {
+        filesToPut.push(manifestFile);
+      }
+
+      const res = await script.projects.updateContent({
+        scriptId: args.scriptId,
+        requestBody: {
+          files: filesToPut
+        }
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ 專案代碼已成功更新！共寫入 ${filesToPut.length} 個檔案。
+• 專案 Script ID: \`${args.scriptId}\``
+          }
+        ],
+        structuredContent: res.data
+      };
+    }
+
+    if (name === 'list_deployments') {
+      const res = await script.projects.deployments.list({
+        scriptId: args.scriptId
+      });
+      const deps = res.data.deployments || [];
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `專案目前共有 ${deps.length} 個部署：
+
+` +
+              deps.map((d, i) => `[${i + 1}] 部署 ID: \`${d.deploymentId}\`
+  - 版本: ${d.deploymentConfig?.versionNumber || 'HEAD'}
+  - 說明: ${d.deploymentConfig?.description || '無'}`).join('
+
+')
+          }
+        ],
+        structuredContent: res.data
+      };
+    }
+
+    if (name === 'list_calendar_events') {
+      const timeMin = args.timeMin || (new Date()).toISOString();
+      const res = await calendar.events.list({
+        calendarId: 'primary',
+        timeMin: timeMin,
+        maxResults: args.maxResults || 10,
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+      const events = res.data.items || [];
+      if (events.length === 0) {
+        return { content: [{ type: 'text', text: '近期無任何行程活動。' }] };
+      }
+      const lines = events.map((ev, i) => {
+        const start = ev.start?.dateTime || ev.start?.date;
+        const end = ev.end?.dateTime || ev.end?.date;
+        return `[${i + 1}] **${ev.summary || '未命名'}**
+  - 時間: ${start} ~ ${end}
+  - 地點: ${ev.location || '無'}
+  - 連結: ${ev.htmlLink || '無'}`;
+      });
+      return { content: [{ type: 'text', text: `查詢到近期 ${events.length} 個行程活動：
+
+` + lines.join('
+
+') }] };
+    }
+
+    if (name === 'create_calendar_event') {
+      const requestBody = {
+        summary: args.summary,
+        description: args.description || '',
+        location: args.location || '',
+        start: args.start.includes('T') ? { dateTime: args.start } : { date: args.start },
+        end: args.end.includes('T') ? { dateTime: args.end } : { date: args.end }
+      };
+
+      // 檢查是否需要綁定或建立官方 Google Meet
+      const shouldAddMeet = args.addMeet || 
+                            args.meetUri || 
+                            args.summary?.includes('視訊') || 
+                            args.summary?.toLowerCase().includes('meet') || 
+                            args.location?.includes('meet.google.com');
+
+      if (args.meetUri || args.location?.includes('meet.google.com')) {
+        const targetUri = args.meetUri || args.location;
+        const codeMatch = targetUri.match(/meet\.google\.com\/([a-z0-9-]+)/i);
+        const confId = codeMatch ? codeMatch[1] : targetUri;
+        requestBody.conferenceData = {
+          conferenceId: confId,
+          conferenceSolution: {
+            key: { type: 'hangoutsMeet' },
+            name: 'Google Meet'
+          },
+          entryPoints: [{
+            entryPointType: 'video',
+            uri: targetUri,
+            label: targetUri.replace('https://', '')
+          }]
+        };
+      } else if (shouldAddMeet) {
+        requestBody.conferenceData = {
+          createRequest: {
+            requestId: 'meet-' + Date.now(),
+            conferenceSolutionKey: { type: 'hangoutsMeet' }
+          }
+        };
+      }
+
+      const res = await calendar.events.insert({
+        calendarId: 'primary',
+        conferenceDataVersion: 1,
+        requestBody
+      });
+
+      const meetInfo = res.data.conferenceData?.entryPoints?.find(ep => ep.entryPointType === 'video');
+      const meetText = meetInfo ? `
+• 📹 **Google Meet 視訊會議**: ${meetInfo.uri} (代碼: \`${res.data.conferenceData.conferenceId || '無'}\`)` : '';
+
+      return {
+        content: [{
+          type: 'text',
+          text: `✅ 成功建立 Google 日曆活動！
+• 標題: **${res.data.summary}**
+• 時間: ${res.data.start?.dateTime || res.data.start?.date} ~ ${res.data.end?.dateTime || res.data.end?.date}${meetText}
+• 行事曆連結: ${res.data.htmlLink}`
+        }]
+      };
+    }
+
+    if (name === 'list_classroom_courses') {
+      const res = await classroom.courses.list({
+        pageSize: args.pageSize || 10
+      });
+      const courses = res.data.courses || [];
+      if (courses.length === 0) {
+        return { content: [{ type: 'text', text: '未找到任何 Google Classroom 課堂。' }] };
+      }
+      const lines = courses.map((c, i) => `[${i + 1}] **${c.name}** (${c.section || '一般'})
+  - 狀態: ${c.courseState}
+  - 課堂代碼: \`${c.enrollmentCode || '無'}\`
+  - 課堂 ID: \`${c.id}\`
+  - 連結: ${c.alternateLink}`);
+      return { content: [{ type: 'text', text: `共讀取到 ${courses.length} 門課堂：
+
+` + lines.join('
+
+') }] };
+    }
+
+    if (name === 'list_classroom_announcements') {
+      const res = await classroom.courses.announcements.list({
+        courseId: args.courseId,
+        pageSize: args.pageSize || 10
+      });
+      const announcements = res.data.announcements || [];
+      if (announcements.length === 0) {
+        return { content: [{ type: 'text', text: `課堂 ID \`${args.courseId}\` 目前無任何公告。` }] };
+      }
+      const lines = announcements.map((a, i) => `[${i + 1}] **${a.text?.substring(0, 80) || '公告'}**
+  - 發布時間: ${a.creationTime}
+  - 連結: ${a.alternateLink}`);
+      return { content: [{ type: 'text', text: `共讀取到 ${announcements.length} 則公告：
+
+` + lines.join('
+
+') }] };
+    }
+
+    return {
+      content: [{ type: 'text', text: `未知的工具指令: ${name}` }],
+      isError: true
     };
-    const res = await calendar.events.insert({ calendarId: 'primary', requestBody: reqBody });
-    return { content: [{ type: 'text', text: `✅ 成功建立 Google 日曆活動：**${res.data.summary}**\n• 時間: ${res.data.start?.dateTime || res.data.start?.date}\n• 連結: ${res.data.htmlLink}` }] };
+  } catch (error) {
+    return {
+      content: [{ type: 'text', text: `執行失敗: ${error.message}` }],
+      isError: true
+    };
   }
-
-  if (name === 'list_classroom_courses') {
-    const res = await classroom.courses.list({ pageSize: args.pageSize || 10 });
-    const courses = res.data.courses || [];
-    if (courses.length === 0) return { content: [{ type: 'text', text: '未找到任何 Classroom 課堂。' }] };
-    const lines = courses.map((c, i) => `[${i+1}] **${c.name}**\n  - 狀態: ${c.courseState} | 代碼: \`${c.enrollmentCode || '無'}\` | 課堂 ID: \`${c.id}\`\n  - 連結: ${c.alternateLink}`);
-    return { content: [{ type: 'text', text: `共讀取到 ${courses.length} 門課堂：\n\n` + lines.join('\n\n') }] };
-  }
-
-  if (name === 'list_classroom_announcements') {
-    const res = await classroom.courses.announcements.list({ courseId: args.courseId, pageSize: args.pageSize || 10 });
-    const announcements = res.data.announcements || [];
-    if (announcements.length === 0) return { content: [{ type: 'text', text: '課堂目前無任何公告。' }] };
-    const lines = announcements.map((a, i) => `[${i+1}] **${a.text?.substring(0, 80) || '公告'}**\n  - 發布: ${a.creationTime} | 連結: ${a.alternateLink}`);
-    return { content: [{ type: 'text', text: `共讀取到 ${announcements.length} 則公告：\n\n` + lines.join('\n\n') }] };
-  }
-
-  throw new Error(`未知工具: ${name}`);
 });
 
-async function main() {
+async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
-main().catch(console.error);
+
+run().catch((error) => {
+  console.error('Fatal error in google-apps-script MCP server:', error);
+  process.exit(1);
+});
+
 ```
 
 ---
