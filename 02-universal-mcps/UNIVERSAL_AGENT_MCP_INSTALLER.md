@@ -1332,7 +1332,7 @@ args = ["-y", "@canva/cli", "mcp"]
 graph TD
     Teacher["任何學科教師"] --> Zip["public-teacher-skills.zip<br>(僅 228 KB 超輕量)"]
     Zip --> M1["1. 教材簡報排版模組<br>• universal-presentation-deck<br>• codex-ppt"]
-    Zip --> M2["2. 108 課綱課堂教案與國寫<br>• taiwan-k12-teacher<br>• guoxie-writing-coach<br>• academic-paper-reviewer"]
+    Zip --> M2["2. 108 課綱課堂教案與國寫<br>• k12-teacher<br>• guoxie-writing-coach<br>• academic-paper-reviewer"]
     Zip --> M3["3. 公開大考解析與自然探究<br>• gsat-science-analyzer<br>• inquiry-science-teacher<br>• nobel-science-explorer"]
     Zip --> M4["4. 公版生物教學與 CER 評改<br>• bio-lesson-plan-designer<br>• bio-teaching-material-maker<br>• bio-inquiry-worksheet-designer<br>• bio-answer-grader"]
     Zip --> M5["5. 個人第二大腦系統<br>• wiki-rag-knowledge-base"]
@@ -1344,7 +1344,7 @@ graph TD
 | :--- | :--- | :--- |
 | **教材簡報** | `universal-presentation-deck` | 將純文字教材、文件大綱一鍵轉為結構優美、具備引言與結論的正式簡報大綱與投影片。 |
 | **教材簡報** | `codex-ppt` | 將課堂筆記、文章直接產出圖文並茂的 PPTX 投影片檔案。 |
-| **通識教案** | `taiwan-k12-teacher` | 依據臺灣 108 課綱核心素養三面九項，撰寫標準素養教案目標與教學活動。 |
+| **通識教案** | `k12-teacher` | 依據臺灣 108 課綱核心素養三面九項，撰寫標準素養教案目標與教學活動。 |
 | **國寫輔導** | `guoxie-writing-coach` | 學測國語文寫作能力測驗（知性題與情意題）審題架構、立意取材與評改建議。 |
 | **學術格式** | `academic-paper-reviewer` | 通用中學生學術小論文與專題報告之結構、引註規範與邏輯審查。 |
 | **大考解析** | `gsat-science-analyzer` | 大考中心公開之學測自然科歷屆試題知識點分佈、難易度統計與命題趨勢。 |
