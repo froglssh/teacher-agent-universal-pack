@@ -135,7 +135,7 @@ description: 以多 AI agent（Google Antigravity、Claude Code、Codex、OpenCo
 
 ## 全域知識庫聯邦（kb-hub MCP 工具）
 
-當查詢跨足全校 50 多個專業知識庫時，直接調用 `kb-hub` 原生工具：
+當你已建置多個知識庫、需要跨庫整合查詢時，直接調用 `kb-hub` 原生工具：
 * `kb_list()`：探索可用的專業知識庫目錄與狀態。
 * `kb_search(query="...", kb="...")`：跨庫精準搜索原文與切塊。
 * `kb_read(path="...")`：精讀特定知識庫的原始 Wiki 檔案。

@@ -18,7 +18,9 @@ def main():
         home / ".claude" / "skills",                  # Claude Code 全域
         Path.cwd() / ".agents" / "skills",            # Antigravity 2 / 專案本地
         Path.cwd() / ".claude" / "skills",            # Claude Code 專案本地
-        home / ".config" / "opencode" / "skills"      # OpenCode
+        home / ".config" / "opencode" / "skills",     # OpenCode
+        Path(os.environ.get("LOCALAPPDATA", home)) / "hermes" / "skills",  # Hermes (Windows)
+        home / ".hermes" / "skills"                # Hermes (macOS / Linux)
     ]
 
     installed_targets = []

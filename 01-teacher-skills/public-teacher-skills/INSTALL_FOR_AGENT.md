@@ -14,7 +14,10 @@
    - 目標路徑：`~/.gemini/config/skills/`
 2. **Claude Code 全域技能**：
    - 目標路徑：`~/.claude/skills/`
-3. **專案本地工作區（Antigravity 2 / Codex / OpenCode / Cursor）**：
+3. **Hermes 全域技能**：
+   - Windows：`%LOCALAPPDATA%\hermes\skills\`
+   - macOS / Linux：`~/.hermes/skills/`
+4. **專案本地工作區（Antigravity 2 / Codex / OpenCode / Cursor）**：
    - 目標路徑：目前專案根目錄下的 `.agents/skills/`
 
 ### 步驟 2：直接執行複製
@@ -26,8 +29,10 @@ from pathlib import Path
 # 依目前 Agent 決定目標目錄 (預設優先安裝至全域 ~/.gemini/config/skills/ 與 ~/.claude/skills/)
 home = Path.home()
 targets = [
-    home / ".gemini/config/skills",
-    home / ".claude/skills",
+    home / ".gemini" / "config" / "skills",
+    home / ".claude" / "skills",
+    Path(os.environ.get("LOCALAPPDATA", home)) / "hermes" / "skills",   # Hermes (Windows)
+    home / ".hermes" / "skills",                                        # Hermes (macOS/Linux)
     Path(".agents/skills")
 ]
 
