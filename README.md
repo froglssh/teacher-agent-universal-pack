@@ -1,6 +1,10 @@
 # 老師專用 AI Agent 核心工具箱與技能庫目錄
 
-歡迎使用！本專案已模組化分類為 **三大核心子資料夾**，讓您與 AI Agent 能一目了然、精準取用所需資源。
+歡迎使用！本專案專為臺灣各級學校教師量身打造，模組化分類為 **三大核心子資料夾** 與 **開箱即用線上指引**，讓您與 AI Agent 能一目了然、精準取用所需資源。
+
+> 🌐 **線上公開指引網址（直接分享給老師）**：[https://froglssh.github.io/teacher-agent-universal-pack/](https://froglssh.github.io/teacher-agent-universal-pack/)  
+> 📥 **下載 PDF 重點大字版手冊（A4 5頁列印檔）**：[點此下載手冊 PDF](./老師專屬_AI_Agent_全能工具箱安裝與使用指南_重點大字版.pdf)  
+> 📦 **GitHub 專案原始碼與安裝包**：[https://github.com/froglssh/teacher-agent-universal-pack](https://github.com/froglssh/teacher-agent-universal-pack)
 
 ---
 

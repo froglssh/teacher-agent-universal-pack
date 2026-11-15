@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>老師專用 AI Agent 核心工具箱與技能指南 (重點大字版)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    
+    .page {
+      width: 210mm;
+      height: 297mm;
+      padding: 14mm 16mm 14mm 16mm;
+      margin: 0;
+      background: #ffffff;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    
+    .page:last-child {
+      page-break-after: auto;
+    }
+    
+    /* 頁首頁尾 */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .footer-bar {
+      position: absolute;
+      bottom: 14mm;
+      left: 18mm;
+      right: 18mm;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* 標題設定 */
+    h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 19px;
+      font-weight: 800;
+      color: #1e3a8a;
+      border-left: 5px solid #2563eb;
+      padding-left: 10px;
+      margin-top: 14px;
+      margin-bottom: 12px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    
+    /* 卡片與佈局 */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .card-accent-blue {
+      border-top: 4px solid #2563eb;
+      background: #f0f7ff;
+    }
+    .card-accent-green {
+      border-top: 4px solid #059669;
+      background: #f0fdf4;
+    }
+    .card-accent-purple {
+      border-top: 4px solid #7c3aed;
+      background: #faf5ff;
+    }
+    .card-accent-amber {
+      border-top: 4px solid #d97706;
+      background: #fffbeb;
+    }
+    
+    /* 步驟大標籤 */
+    .step-box {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .step-num {
+      background: #2563eb;
+      color: white;
+      font-weight: 900;
+      font-size: 15px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-right: 12px;
+      margin-top: 2px;
+    }
+    .step-content {
+      flex: 1;
+    }
+    .step-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    
+    /* 口訣/提示框 */
+    .highlight-box {
+      background: #eff6ff;
+      border: 1.5px dashed #3b82f6;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 14px;
+      color: #1e40af;
+    }
+    .quote-box {
+      background: #fef3c7;
+      border-left: 4px solid #d97706;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      color: #92400e;
+      border-radius: 0 6px 6px 0;
+      margin: 6px 0;
+      font-weight: 600;
+    }
+    
+    /* 表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px 0;
+      font-size: 13.5px;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .badge-free { background: #dcfce7; color: #166534; }
+    .badge-api { background: #dbeafe; color: #1e40af; }
+    .badge-skill { background: #f3e8ff; color: #6b21a8; }
+    
+    ul {
+      padding-left: 18px;
+      margin-top: 4px;
+      margin-bottom: 6px;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    
+    /* 封面特殊樣式 */
+    .hero-banner {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 10px;
+    }
+    .hero-banner h1 {
+      color: white;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .hero-banner p {
+      font-size: 14px;
+      opacity: 0.92;
+      font-weight: 400;
+    }
+    .author-tag {
+      margin-top: 8px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.18);
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+
+    /* 網頁版頂部導航與響應樣式 */
+    .web-nav {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: #1e3a8a;
+      color: white;
+      padding: 12px 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .web-nav-inner {
+      max-width: 210mm;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .web-nav-title {
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .web-nav-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-btn-green {
+      background: #10b981;
+      color: white;
+    }
+    .nav-btn-green:hover {
+      background: #059669;
+    }
+    .nav-btn-outline {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+    .nav-btn-outline:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    
+    @media screen {
+      body {
+        background-color: #f1f5f9;
+        padding-bottom: 40px;
+      }
+      .page {
+        margin: 24px auto;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border-radius: 6px;
+      }
+    }
+    
+    @media print {
+      .web-nav {
+        display: none !important;
+      }
+      body {
+        background: #ffffff;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 網頁專用頂部操作條 -->
+  <div class="web-nav">
+    <div class="web-nav-inner">
+      <div class="web-nav-title">
+        🏫 老師專屬 AI Agent 全能工具箱
+      </div>
+      <div class="web-nav-btns">
+        <a href="https://github.com/froglssh/teacher-agent-universal-pack" target="_blank" class="nav-btn nav-btn-green">
+          📦 前往 GitHub 下載安裝包
+        </a>
+        <a href="老師專屬_AI_Agent_全能工具箱安裝與使用指南_重點大字版.pdf" download class="nav-btn nav-btn-outline">
+          📥 下載 PDF 重點大字版 (A4)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 1 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>AI Agent 教學與生活全能助理指南</span>
+      <span>重點大字版 ‧ 第 1 頁</span>
+    </div>
+
+    <div class="hero-banner">
+      <h1>老師專屬 AI Agent 核心工具箱與技能指南</h1>
+      <p>零終端機門檻 ✕ 20 大教學技能 ✕ 雲端行政秒搜 ✕ 生活交通機票速查</p>
+      <div class="author-tag">規劃製作：臺北市立麗山高級中學 林獻升 老師</div>
+    </div>
+
+    <!-- 官方下載安裝網址專屬卡片 -->
+    <div class="card" style="background:#eff6ff; border: 2px solid #2563eb; margin-bottom: 10px; padding: 10px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="font-size: 14.5px; font-weight: 800; color: #1e3a8a;">📦 官方工具箱與安裝包下載網址：</span>
+        <span class="badge badge-free" style="font-size: 11px;">開箱即用・免終端機</span>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; margin: 2px 0;">
+        <a href="https://github.com/froglssh/teacher-agent-universal-pack" target="_blank" style="color: #2563eb; text-decoration: underline; word-break: break-all;">
+          https://github.com/froglssh/teacher-agent-universal-pack
+        </a>
+      </div>
+      <div style="font-size: 12.5px; color: #475569;">
+        💡 老師點擊上方網址進入 GitHub，按右上方綠色按鈕 <strong>Code ➔ Download ZIP</strong> 下載解壓縮即可取得全部工具與技能！
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin: 6px 0 10px 0; padding: 8px 12px;">
+      <strong>💡 給老師的心情定心丸：</strong><br>
+      老師們平日教學與班務繁重，這套工具專為<strong>「完全不碰黑底白字終端機」</strong>的老師設計！您不需要懂任何程式代碼，只要透過滑鼠點擊解壓，再對 AI 說一句話，全部功能自動為您配置就緒！
+    </div>
+
+    <h2>四 大 核 心 模 組 能 力 總 覽</h2>
+    <div class="grid-4">
+      <div class="card card-accent-blue">
+        <h3>🎓 20 大教學科研技能 (Skills)</h3>
+        <p style="font-size: 13.5px; color: #475569;">專為 108 課綱設計：素養導向命題、試卷審查、非選題 CER 批改、探究實作學習單、國寫作文指導與簡報設計。</p>
+      </div>
+
+      <div class="card card-accent-green">
+        <h3>💼 Google 核心辦公生態 (MCP)</h3>
+        <p style="font-size: 13.5px; color: #475569;">串接官方雲端服務：Drive 考卷講義全文秒搜、Google Calendar 日曆行程排定、Classroom 課堂發布、People 學校通訊錄。</p>
+      </div>
+
+      <div class="card card-accent-purple">
+        <h3>✈️ 生活通勤與旅遊機票 (API)</h3>
+        <p style="font-size: 13.5px; color: #475569;">生活即時外掛：交通部 TDX 全台公車/高鐵到站、Duffel 全球機票即時比價、日圓美金即時外幣匯率換算、全球城市氣象預報。</p>
+      </div>
+
+      <div class="card card-accent-amber">
+        <h3>🛠️ 生產力與視覺畫布 (MCP)</h3>
+        <p style="font-size: 13.5px; color: #475569;">跨平台數位工具：Notion 教學筆記庫、Padlet 班級數位看板、Canva 視覺簡報、Playwright 網頁資料自動收集。</p>
+      </div>
+    </div>
+
+    <div class="card" style="background:#f1f5f9; margin-top: 10px;">
+      <h3 style="color:#0f172a;">🤖 支援本機各大 AI Agent 平台</h3>
+      <p style="font-size: 13.5px; color: #334155;">
+        本套件已完成全自動跨平台適配，無論您使用的是 <strong>Google Antigravity</strong>、<strong>Claude Code</strong>、<strong>Codex Desktop</strong>、<strong>OpenCode</strong> 還是 <strong>Hermes</strong>，都能一鍵無縫注入使用！
+      </p>
+    </div>
+
+    <div class="footer-bar">
+      <span>AI 資料庫 ‧ 0 agent 基礎安裝</span>
+      <span>1 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>AI Agent 安裝與操作步驟</span>
+      <span>重點大字版 ‧ 第 2 頁</span>
+    </div>
+
+    <h1>超簡單！老師「免終端機」四步驟安裝</h1>
+    <p style="font-size: 14px; color: #475569; margin-bottom: 10px;">只要四個步驟，把對話框當成與真人管家聊天，動動滑鼠就能全數搞定！</p>
+
+    <!-- 工具包下載提醒 -->
+    <div style="background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+      <div>
+        <span style="font-weight: 800; color: #1e3a8a; font-size: 13.5px;">📦 安裝前準備：請先至 GitHub 下載專案壓縮包</span><br>
+        <a href="https://github.com/froglssh/teacher-agent-universal-pack" target="_blank" style="font-weight: 700; color: #2563eb; text-decoration: underline; font-size: 13.5px;">
+          https://github.com/froglssh/teacher-agent-universal-pack
+        </a>
+      </div>
+      <span style="font-size: 12px; color: #1e40af; background: #dbeafe; padding: 3px 8px; border-radius: 4px; font-weight: 700;">點 Code ➔ Download ZIP</span>
+    </div>
+
+    <!-- 步驟 1 -->
+    <div class="step-box">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">步驟一：叫 Agent 幫您安裝通用環境與 MCP 工具</div>
+        <p style="font-size: 13.5px; color: #334155;">傳送手冊檔案 <code>UNIVERSAL_AGENT_MCP_INSTALLER.md</code> 給您的 Agent，對它說：</p>
+        <div class="quote-box">🗣️ 老師咒語：「請讀取 UNIVERSAL_AGENT_MCP_INSTALLER.md，執行 install_universal_mcps.py，幫我自動把常用環境裝好！」</div>
+        <p style="font-size: 12.5px; color: #64748b;">↳ Agent 就會在背景自動把所有底層環境與共用工具設定完畢，老師免動手。</p>
+      </div>
+    </div>
+
+    <!-- 步驟 2 -->
+    <div class="step-box">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">步驟二：啟動「保姆引導模式」開通 Google 5 大 API</div>
+        <p style="font-size: 13.5px; color: #334155;">需要使用 Google Drive 秒搜、日曆或通訊錄時，對 Agent 說這句話：</p>
+        <div class="quote-box">🗣️ 老師咒語：「我想開通 Google API，請啟動『保姆引導模式』，一步一步帶我做，一次只講一步，我說好了你再說下一步！」</div>
+        <p style="font-size: 12.5px; color: #64748b;">↳ Agent 會每次給您一個直達網址，告訴您點哪個按鈕。下載憑證後說「我載好了」，Agent 會自動搬移歸位！</p>
+      </div>
+    </div>
+
+    <!-- 步驟 3 -->
+    <div class="step-box">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">步驟三：滑鼠雙擊解壓技能包，叫 Agent 一秒導入技能</div>
+        <p style="font-size: 13.5px; color: #334155;">
+          1. 滑鼠直接雙擊解開 <code>public-teacher-skills.zip</code> 壓縮檔。<br>
+          2. 在對話框中對 Agent 說出這句話：
+        </p>
+        <div class="quote-box">🗣️ 老師咒語：「我已經解壓縮好 public-teacher-skills，請讀取裡面的說明，把 20 大教學技能全部安裝好！」</div>
+        <p style="font-size: 12.5px; color: #64748b;">↳ 20 大名師教學模組即刻全部就緒，對話框輸入 <code>/skills</code> 即可隨時使用。</p>
+      </div>
+    </div>
+
+    <!-- 步驟 4 -->
+    <div class="step-box">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">步驟四：開通生活、公車高鐵、機票比價與即時匯率</div>
+        <p style="font-size: 13.5px; color: #334155;">
+          • <strong>外幣匯率與天氣</strong>：免申請！安裝完成後隨開隨用。<br>
+          • <strong>公車高鐵 (TDX) 與機票 (Duffel)</strong>：至官網免費註冊，點擊複製金鑰貼給 Agent：
+        </p>
+        <div class="quote-box">🗣️ 老師咒語：「這是我在官網申請的 TDX（或 Duffel）金鑰：[貼上]，請幫我設定進生活交通工具箱！」</div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>AI 資料庫 ‧ 0 agent 基礎安裝</span>
+      <span>2 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 3 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>教學與行政技能篇</span>
+      <span>重點大字版 ‧ 第 3 頁</span>
+    </div>
+
+    <h1>20 大教學科研技能（安裝後怎麼用？）</h1>
+    <p style="font-size: 14.5px; color: #475569; margin-bottom: 12px;">安裝完成後，您可以在日常出題、審卷、批改與備課時，直接用口語吩咐 Agent：</p>
+
+    <h2>📚 108 課綱生物與科學教學技能實用語法</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">技能名稱</th>
+          <th style="width: 32%;">主要能力</th>
+          <th style="width: 40%;">老師日常對話範例</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>素養導向命題</strong><br><span class="badge badge-skill">bio-exam-item-writer</span></td>
+          <td>命製學測、分科、段考單選、多選、題組與實驗混合題。</td>
+          <td>「請依高一生物遺傳章節，命製一題探究導向的題組，含 CER 評分規準與誘答選項。」</td>
+        </tr>
+        <tr>
+          <td><strong>試卷審題檢核</strong><br><span class="badge badge-skill">bio-exam-quality-reviewer</span></td>
+          <td>以 15 項大考檢核標準，嚴審科學正確性、超綱與選項多解。</td>
+          <td>「幫我檢查這份高三第一次段考題目，有沒有超綱、歧義或選項有暗示線索的問題？」</td>
+        </tr>
+        <tr>
+          <td><strong>非選題 CER 評改</strong><br><span class="badge badge-skill">bio-answer-grader</span></td>
+          <td>以主張-證據-推論規準評改學生文字或手寫掃描卷。</td>
+          <td>「請根據這份評分規準，批改這 3 份學生的非選題作答，逐點給分並指出迷思概念。」</td>
+        </tr>
+        <tr>
+          <td><strong>探究實作學習單</strong><br><span class="badge badge-skill">bio-inquiry-worksheet</span></td>
+          <td>設計探究四階段鷹架學習單、變因控制表與互評規準。</td>
+          <td>「請幫我設計一份光合作用反應速率探究實驗學習單，要有變因設計表與誤差分析。」</td>
+        </tr>
+        <tr>
+          <td><strong>國寫作文教練</strong><br><span class="badge badge-skill">guoxie-writing-coach</span></td>
+          <td>學測國寫知性情意審題、擬大綱、名句庫與高分範文。</td>
+          <td>「請解析這篇知性題作文題目，給學生起承轉合的大綱引導，並寫一篇示範下水文。」</td>
+        </tr>
+        <tr>
+          <td><strong>簡報企劃設計</strong><br><span class="badge badge-skill">universal-presentation</span></td>
+          <td>將長文教材自動轉換為結構清晰的逐頁簡報大綱與講稿。</td>
+          <td>「把這篇免疫反應講義，轉成 8 頁教學簡報腳本，每頁都要有核心概念與提問。」</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>🔍 Google 雲端行政極速秒搜（自然語言呼叫）</h2>
+    <div class="card" style="background:#f8fafc; font-size: 14px;">
+      <ul>
+        <li><strong>秒搜考卷教材</strong>：「幫我搜尋雲端硬碟裡去年高一第二次段考的生物試卷檔案在哪裡？」</li>
+        <li><strong>查詢通訊錄</strong>：「查一下全校通訊錄中，設備組長李老師的校內分機與手機號碼。」</li>
+        <li><strong>課堂作業公告</strong>：「在 Google Classroom 高二 301 班發布公告，提醒明天生物課要帶顯微鏡玻片。」</li>
+      </ul>
+    </div>
+
+    <div class="footer-bar">
+      <span>AI 資料庫 ‧ 0 agent 基礎安裝</span>
+      <span>3 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 4 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>生活旅遊與交通即時查</span>
+      <span>重點大字版 ‧ 第 4 頁</span>
+    </div>
+
+    <h1>生活通勤、機票比價與即時匯率氣象</h1>
+    <p style="font-size: 14.5px; color: #475569; margin-bottom: 12px;">Agent 不僅是教學神隊友，更是隨身秘書與生活旅遊管家！</p>
+
+    <div class="grid-2">
+      <!-- 公車高鐵 -->
+      <div class="card card-accent-blue">
+        <h3>🚌 台灣公車即時動態 (TDX)</h3>
+        <p style="font-size: 13px; color: #334155; margin-bottom: 6px;">全台各縣市公車即時到站秒數精確查詢：</p>
+        <div class="quote-box" style="font-size: 12.5px;">
+          • 「查一下台北公車 307 到哪了？還有幾分鐘進站？」<br>
+          • 「基隆路幹線往新店方向，什麼時候到景美站？」
+        </div>
+      </div>
+
+      <!-- 高鐵台鐵 -->
+      <div class="card card-accent-green">
+        <h3>🚄 台灣高鐵時刻表 (TDX)</h3>
+        <p style="font-size: 13px; color: #334155; margin-bottom: 6px;">即時查發車時間與停靠站：</p>
+        <div class="quote-box" style="font-size: 12.5px;">
+          • 「今天下午左營往南港的高鐵有哪幾班車？」<br>
+          • 「週五下班後台北到台中的高鐵時刻。」
+        </div>
+      </div>
+
+      <!-- 機票比價 -->
+      <div class="card card-accent-purple">
+        <h3>✈️ 全球國際機票比價 (Duffel)</h3>
+        <p style="font-size: 13px; color: #334155; margin-bottom: 6px;">各大航空公司即時票價、直飛/轉機比價：</p>
+        <div class="quote-box" style="font-size: 12.5px;">
+          • 「比價 12/05 松山飛羽田的直飛航班與票價（星宇/長榮/日航）」<br>
+          • 「查明年寒假台北飛大阪關西的機票價格。」
+        </div>
+      </div>
+
+      <!-- 即時匯率 -->
+      <div class="card card-accent-amber">
+        <h3>💰 即時外幣匯率換算 (免金鑰)</h3>
+        <p style="font-size: 13px; color: #334155; margin-bottom: 6px;">日圓、美金、歐元、韓元對台幣即時雙向試算：</p>
+        <div class="quote-box" style="font-size: 12.5px;">
+          • 「現在換 5 萬日圓大約需要多少新台幣？」<br>
+          • 「今天美金對台幣的即時匯率是多少？」
+        </div>
+      </div>
+    </div>
+
+    <!-- 氣象與地圖 -->
+    <div class="card" style="border-left: 4px solid #0284c7; background: #f0f9ff; margin-top: 6px;">
+      <h3 style="color:#0369a1;">🌤️ 全球城市氣象預報 ＆ 🗺️ Google 路線規劃</h3>
+      <div class="grid-2" style="margin-top: 8px; margin-bottom: 0;">
+        <div>
+          <strong style="color:#0284c7;">全球城市天氣（免申請即用）：</strong>
+          <ul style="font-size: 13px; color: #334155;">
+            <li>「東京明天的天氣如何？需要帶傘嗎？」</li>
+            <li>「查一下宜蘭今天會不會下雨、氣溫幾度？」</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#0284c7;">Google 避塞車導航 (Routes API)：</strong>
+          <ul style="font-size: 13px; color: #334155;">
+            <li>「從內湖開車到台中爸爸家要多久？走哪條路？」</li>
+            <li>「從台北車站到九份老街的最佳路線規劃。」</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>AI 資料庫 ‧ 0 agent 基礎安裝</span>
+      <span>4 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 5 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>資安安心保證與常見問題</span>
+      <span>重點大字版 ‧ 第 5 頁</span>
+    </div>
+
+    <h1>老師常見問題與避坑指南（安全防護）</h1>
+    <p style="font-size: 14.5px; color: #475569; margin-bottom: 14px;">資安第一、保護隱私！請老師們安心使用：</p>
+
+    <!-- QA 1 -->
+    <div class="card" style="margin-bottom: 12px;">
+      <h3 style="color:#1e3a8a;">Q1：申請這些 API 會不會被扣款收費？需要綁信用卡嗎？</h3>
+      <p style="font-size: 14px; color: #334155;">
+        <strong>答：完全不會！100% 免費！</strong><br>
+        本教學所引導的所有平台（交通部 TDX、Duffel 航空、Google Cloud）皆具備極為龐大的免費調用額度。老師個人查詢公車、機票或行程，免費額度根本扣不完，且**申請過程不需要輸入任何信用卡號碼**，安全無虞。
+      </p>
+    </div>
+
+    <!-- QA 2 -->
+    <div class="card" style="margin-bottom: 12px;">
+      <h3 style="color:#1e3a8a;">Q2：我的個人資料或考卷會不會外流給第三方？</h3>
+      <p style="font-size: 14px; color: #334155;">
+        <strong>答：絕對不會！</strong><br>
+        所有 API 都是您在官方平台「自己註冊的專屬私有金鑰」，通訊只在您的電腦與官方伺服器之間進行，絕不會經過任何未知的第三方中繼伺服器，嚴格保護學校與個人隱私。
+      </p>
+    </div>
+
+    <!-- QA 3 避坑重要提示 -->
+    <div class="card" style="border: 2px solid #ef4444; background: #fff5f5; margin-bottom: 12px;">
+      <h3 style="color:#b91c1c;">⚠️ 重大避坑指南：Google 地圖請認明「Routes API」！</h3>
+      <p style="font-size: 14px; color: #7f1d1d;">
+        Google 正在全面改版路線規劃系統。在 Google Cloud 服務庫啟用時，請務必搜尋並啟用 <strong><code>Routes API</code></strong> 與 <strong><code>Places API (New)</code></strong>。<br>
+        千萬<strong>不要選到舊版的 Directions API</strong>，否則會出現 <code>legacy API not enabled</code> 錯誤！本套件已全面適配新版 Routes API，開通後立即可用。
+      </p>
+    </div>
+
+    <!-- 總結引導 -->
+    <div class="card card-accent-blue" style="margin-top: 14px; text-align: center; padding: 18px 20px;">
+      <h2 style="border:none; padding:0; margin:0 0 6px 0; color:#1e40af; font-size: 20px;">遇到任何疑問？讓 Agent 當您的專屬家教！</h2>
+      <p style="font-size: 14.5px; color: #1e3a8a; margin-bottom: 10px;">
+        任何時候卡關，只要在對話框貼上手冊並說出這句話：
+      </p>
+      <div class="quote-box" style="display: inline-block; text-align: left; font-size: 15px; padding: 10px 18px;">
+        🗣️ <strong>「請啟動保姆引導模式，一步一步帶我做，我說好了你再說下一步！」</strong>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin-top: 8px;">Agent 就會全程陪伴您完成所有建置，享受科技輔助教學的巨大樂趣！</p>
+    </div>
+
+    <div class="footer-bar">
+      <span>AI 資料庫 ‧ 0 agent 基礎安裝</span>
+      <span>5 / 5</span>
+    </div>
+  </div>
+
+</body>
+</html>
