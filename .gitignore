@@ -1,0 +1,5 @@
+.DS_Store
+*.pyc
+__pycache__/
+installed_mcps_tools_and_runtimes_inventory.md
+.keep

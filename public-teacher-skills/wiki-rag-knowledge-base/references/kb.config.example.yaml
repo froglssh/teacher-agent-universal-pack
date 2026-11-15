@@ -1,0 +1,57 @@
+# kb.config.yaml — Wiki-RAG 系統全域設定檔範本
+# 供 Builder 在初始化知識庫時複製為根目錄之 kb.config.yaml，並由 Optimizer 進行單一變因調參。
+
+system:
+  name: "Wiki-RAG Knowledge Base"
+  version: "1.0.0"
+  language: "zh-TW"
+  root_path: "."
+
+# 知識形態與切塊策略 (Chunking Strategy)
+chunking:
+  strategy: "natural_section"     # natural_section: 依標題/問答自然切塊；fixed: 固定長度
+  max_chars: 800                  # 單一切塊上限字元數
+  overlap_chars: 120              # 超長段落切塊時之重疊字元數
+  prepend_context: true           # 是否自動在切塊正文前加上 1~2 句前置情境句 (Context Enrichment)
+  preserve_hierarchy: true        # 切塊是否保留文件標題階層路徑 (H1 > H2 > H3)
+
+# 檢索與重排參數 (Retrieval & Ranking)
+retrieval:
+  engine: "sqlite_fts5"           # sqlite_fts5 | sqlite_vec | lancedb | pgvector
+  bm25_weight: 0.6                # 關鍵字 BM25 權重 (0.0 ~ 1.0)
+  vector_weight: 0.4              # 向量語意相似度權重 (0.0 ~ 1.0)
+  candidates: 30                  # 第一階段海選取回之候選切塊數
+  top_k: 5                        # 第二階段重排後送入模型小抄之切塊數
+  min_score: 0.35                 # 最低相似度門檻（低於此分數判定為「資料不足」）
+  filter_superseded: true         # 自動排除已被新版本取代 (superseded) 之切塊
+
+# AI 模型與推論參數 (Models)
+models:
+  chat:
+    provider: "anthropic"         # anthropic | google | openai | local
+    model_name: "claude-3-7-sonnet"
+    temperature: 0.2              # 生成隨機度 (0.0~0.3 為保守嚴謹模式)
+    max_tokens: 4096
+  rerank:
+    enabled: false                # 是否啟用第二階段專用交叉編碼重排模型 (Cross-Encoder)
+    provider: "cohere"
+    model_name: "rerank-v3.5"
+  embedding:
+    provider: "openai"
+    model_name: "text-embedding-3-small"
+    dimensions: 1536
+
+# 答案回存機制 (Compounding Writeback)
+writeback:
+  mode: "ask"                     # ask: 詢問使用者許可後回存；auto: 高價值分析自動存入 wiki/syntheses/
+  save_questions: true            # 無答案或資料不足之查詢是否自動登記至 wiki/questions/
+  auto_link: true                 # 回存新頁面時是否自動在 wiki/index.md 追加雙向連結
+
+# 評估與及格線標準 (Optimizer Thresholds)
+eval:
+  golden_set_path: "eval/golden.jsonl"
+  metrics:
+    first_stage_recall: 0.90      # 海選命中率及格線 (90%)
+    context_precision: 0.80       # 小抄命中率及格線 (80%)
+    answer_accuracy: 0.85         # 答案正確率及格線 (85%)
+    citation_fidelity: 0.95       # 引用正確與原句支持率及格線 (95%)

@@ -1,0 +1,6 @@
+interface:
+  display_name: "探究實作教師"
+  short_description: "自然探究教案、學習單與評量設計"
+  default_prompt: "Use $inquiry-science-teacher to design a high school science inquiry lesson, worksheet, or rubric."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,26 @@
+{
+  "system_version": "1.0.0",
+  "last_updated": "2026-11-01T14:30:00Z",
+  "sources": {
+    "src-2024-biology-camp-manual": {
+      "path": "raw/營隊/2024生物營隊實察手冊.pdf",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "clean_path": "clean/src-2024-biology-camp-manual.md",
+      "chunks_path": "chunks/src-2024-biology-camp-manual.jsonl",
+      "chunk_count": 24,
+      "version": 1,
+      "status": "active",
+      "updated_at": "2026-11-01T14:35:00Z"
+    },
+    "src-2025-course-handbook": {
+      "path": "raw/課諮/114學年度學生選課手冊.docx",
+      "hash": "5d41402abc4b2a76b9719d911017c592ff48852e90c686db173b88b77cc2c285",
+      "clean_path": "clean/src-2025-course-handbook.md",
+      "chunks_path": "chunks/src-2025-course-handbook.jsonl",
+      "chunk_count": 38,
+      "version": 1,
+      "status": "active",
+      "updated_at": "2026-11-01T14:40:00Z"
+    }
+  }
+}
