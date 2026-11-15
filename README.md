@@ -12,7 +12,7 @@
 
 ```
 skill/
-├── 📁 01-teacher-skills/          # 教師教學、科研與行政專用 20 大 Skills 技能包
+├── 📁 01-teacher-skills/          # 教師教學、科研與行政專用 23 大 Skills 技能包
 ├── 📁 02-universal-mcps/          # 跨 Agent 通用 MCP 伺服器與 Google 生態系 API 部署
 └── 📁 03-travel-and-transit/      # 交通、國際航班、外幣匯率與即時氣象工具箱
 ```
@@ -21,7 +21,7 @@ skill/
 
 ### 1. 🎓 [01-teacher-skills/](./01-teacher-skills/)（教師教學專用技能包）
 專為高中、各級學校教師與行政同仁量身打造的專屬 Agent 技能：
-* 📦 **`public-teacher-skills/`**：20 大精選教學技能原始檔案（含 108 課綱生物出題、改題、審題、CER 批改、探究學習單、簡報設計、國寫作文指導、科展評審等）。
+* 📦 **`public-teacher-skills/`**：23 大精選教學技能原始檔案（含 108 課綱學習歷程檔案優化、升學自傳讀書計畫、自主學習指導、生物出題／改題／審題／CER 批改、探究學習單、簡報設計、國寫作文指導等）。
 * 🗜️ **`public-teacher-skills.zip`**：技能一鍵安裝壓縮包（滑鼠雙擊解壓即可讓 Agent 一秒導入）。
 * 📑 **`TEACHER_AGENT_RECOMMENDED_STACK.md`**：導師與各科任課教師 AI 工具與技能推薦架構圖。
 
