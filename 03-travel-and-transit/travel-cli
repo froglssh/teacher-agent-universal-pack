@@ -1,0 +1,578 @@
+#!/usr/bin/env node
+/**
+ * Travel CLI: 台灣交通 (TDX)、全球即時外幣匯率、機票查詢 (Duffel) 與氣象工具
+ */
+import fs from 'fs';
+import path from 'path';
+
+const HOME = process.env.HOME || '/Users/froglssh';
+const CONFIG_PATH = path.join(HOME, '.gemini', 'config', 'travel_transit_config.json');
+const TOKEN_CACHE_PATH = path.join(HOME, '.gemini', 'config', 'tdx_token_cache.json');
+
+function loadConfig() {
+  let cfg = {
+    tdx: {
+      clientId: process.env.TDX_CLIENT_ID || '',
+      clientSecret: process.env.TDX_CLIENT_SECRET || '',
+    },
+    exchangeRateApiKey: process.env.EXCHANGE_RATE_API_KEY || '',
+    duffelApiKey: process.env.DUFFEL_API_KEY || '',
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+  };
+
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      const fileData = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+      if (fileData.tdx) {
+        if (!cfg.tdx.clientId && fileData.tdx.clientId) cfg.tdx.clientId = fileData.tdx.clientId;
+        if (!cfg.tdx.clientSecret && fileData.tdx.clientSecret) cfg.tdx.clientSecret = fileData.tdx.clientSecret;
+      }
+      if (!cfg.exchangeRateApiKey && fileData.exchangeRateApiKey) {
+        cfg.exchangeRateApiKey = fileData.exchangeRateApiKey;
+      }
+      if (!cfg.duffelApiKey && fileData.duffelApiKey) {
+        cfg.duffelApiKey = fileData.duffelApiKey;
+      }
+      if (!cfg.googleMapsApiKey && fileData.googleMapsApiKey) {
+        cfg.googleMapsApiKey = fileData.googleMapsApiKey;
+      }
+    } catch (e) {}
+  }
+  return cfg;
+}
+
+const AIRPORT_MAP = {
+  '台北': 'TPE',
+  '桃園': 'TPE',
+  '松山': 'TSA',
+  '高雄': 'KHH',
+  '台中': 'RMQ',
+  '東京': 'NRT',
+  '成田': 'NRT',
+  '羽田': 'HND',
+  '大阪': 'KIX',
+  '關西': 'KIX',
+  '京都': 'KIX',
+  '福岡': 'FUK',
+  '沖繩': 'OKA',
+  '札幌': 'CTS',
+  '首爾': 'ICN',
+  '仁川': 'ICN',
+  '金浦': 'GMP',
+  '釜山': 'PUS',
+  '香港': 'HKG',
+  '澳門': 'MFM',
+  '曼谷': 'BKK',
+  '新加坡': 'SIN',
+  '吉隆坡': 'KUL',
+  '倫敦': 'LHR',
+  '巴黎': 'CDG',
+  '紐約': 'JFK',
+  '舊金山': 'SFO',
+  '洛杉磯': 'LAX',
+};
+
+function resolveAirportCode(str) {
+  if (!str) return 'TPE';
+  const clean = str.trim().toUpperCase();
+  if (/^[A-Z]{3}$/.test(clean)) return clean;
+  for (const [key, code] of Object.entries(AIRPORT_MAP)) {
+    if (str.includes(key)) return code;
+  }
+  return clean;
+}
+
+const args = process.argv.slice(2);
+const command = args[0] ? args[0].toLowerCase() : 'help';
+const cfg = loadConfig();
+
+let tokenCache = { token: null, exp: 0 };
+async function getTdxToken() {
+  if (!cfg.tdx.clientId || !cfg.tdx.clientSecret) return null;
+
+  if (fs.existsSync(TOKEN_CACHE_PATH)) {
+    try {
+      const c = JSON.parse(fs.readFileSync(TOKEN_CACHE_PATH, 'utf8'));
+      if (c.token && c.expiresAt > Date.now() + 60000) {
+        return c.token;
+      }
+    } catch (e) {}
+  }
+
+  const url = 'https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token';
+  const body = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: cfg.tdx.clientId,
+    client_secret: cfg.tdx.clientSecret,
+  });
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+  if (!res.ok) throw new Error(`TDX 憑證驗證失敗 (${res.status})`);
+  const data = await res.json();
+  const token = data.access_token;
+  try {
+    fs.writeFileSync(
+      TOKEN_CACHE_PATH,
+      JSON.stringify({
+        token,
+        expiresAt: Date.now() + (data.expires_in || 86400) * 1000,
+      }),
+      'utf8'
+    );
+  } catch (e) {}
+  return token;
+}
+
+async function queryFlight(originInput, destInput, dateInput) {
+  if (!cfg.duffelApiKey) {
+    console.log('⚠️ 尚未設定 Duffel API Key。');
+    return;
+  }
+  const origin = resolveAirportCode(originInput || 'TPE');
+  const destination = resolveAirportCode(destInput || 'NRT');
+
+  // 若沒給日期，預設 2 週後
+  let depDate = dateInput;
+  if (!depDate) {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    depDate = d.toISOString().slice(0, 10);
+  }
+
+  console.log(`\n======================================================`);
+  console.log(`✈️ 【${origin} ➜ ${destination}】機票比價與航班即時查詢`);
+  console.log(`出發日期: ${depDate} | 旅客: 1 位成人經濟艙`);
+  console.log(`======================================================`);
+
+  try {
+    const duffelUrl = 'https://api.duffel.com/air/offer_requests?return_offers=true';
+    const body = {
+      data: {
+        slices: [{ origin, destination, departure_date: depDate }],
+        passengers: [{ type: 'adult' }],
+        cabin_class: 'economy',
+      },
+    };
+
+    const res = await fetch(duffelUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${cfg.duffelApiKey}`,
+        'Duffel-Version': 'v2',
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`查詢失敗 (${res.status}):`, err);
+      return;
+    }
+
+    const data = await res.json();
+    const offers = data.data?.offers || [];
+    if (offers.length === 0) {
+      console.log(`查無相符航班方案。`);
+      return;
+    }
+
+    offers.sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount));
+    console.log(`共搜尋到 ${offers.length} 筆航班，推薦前 5 筆最優惠票價：\n`);
+
+    offers.slice(0, 5).forEach((o, i) => {
+      const airline = o.owner?.name || '航空公司';
+      const slice = o.slices?.[0];
+      const segs = slice?.segments || [];
+      const first = segs[0];
+      const last = segs[segs.length - 1];
+      const stops = segs.length > 1 ? `轉機 ${segs.length - 1} 次` : '直飛';
+      const dep = first?.departing_at?.replace('T', ' ')?.slice(0, 16);
+      const arr = last?.arriving_at?.replace('T', ' ')?.slice(0, 16);
+      const price = `${parseFloat(o.total_amount).toLocaleString()} ${o.total_currency}`;
+
+      console.log(`${i + 1}. 【${airline}】 ${stops}`);
+      console.log(`   航段：${first?.origin?.iata_code} (${dep}) ➜ ${last?.destination?.iata_code} (${arr})`);
+      console.log(`   票價：💰 ${price}\n`);
+    });
+    console.log(`======================================================\n`);
+  } catch (err) {
+    console.error('連線錯誤:', err.message);
+  }
+}
+
+async function showRates(base = 'TWD', target = null, amount = 1) {
+  base = base.toUpperCase();
+  const url = `https://open.er-api.com/v6/latest/${base}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.result !== 'success') {
+      console.error('查詢失敗:', data);
+      return;
+    }
+    const rates = data.rates;
+    console.log(`\n======================================================`);
+    console.log(`💰 即時外幣匯率報告 (基準貨幣: ${base})`);
+    console.log(`更新時間 (UTC): ${data.time_last_update_utc}`);
+    console.log(`======================================================`);
+
+    if (target) {
+      target = target.toUpperCase();
+      const r = rates[target];
+      if (!r) {
+        console.log(`找不到貨幣 ${target}`);
+        return;
+      }
+      console.log(`• 1 ${base} = ${r} ${target}`);
+      console.log(`• 1 ${target} = ${(1 / r).toFixed(4)} ${base}`);
+      if (amount !== 1) {
+        console.log(`💵 試算：${amount.toLocaleString()} ${base} = ${(amount * r).toFixed(2)} ${target}`);
+      }
+    } else {
+      const popular = ['USD', 'JPY', 'EUR', 'KRW', 'THB', 'CNY', 'HKD', 'GBP', 'AUD', 'SGD', 'VND'];
+      console.log(`常見旅遊貨幣 (1 ${base} 可兌換)：`);
+      popular.forEach((cur) => {
+        if (rates[cur]) {
+          const r = rates[cur];
+          const inv = (1 / r).toFixed(4);
+          console.log(`• ${cur.padEnd(4)} : ${r.toFixed(4).padStart(9)}  (1 ${cur} ≈ ${inv} ${base})`);
+        }
+      });
+      if (amount !== 1) {
+        console.log(`\n💵 試算 ${amount.toLocaleString()} ${base} 兌換結果：`);
+        ['USD', 'JPY', 'EUR', 'KRW', 'THB'].forEach((cur) => {
+          if (rates[cur]) {
+            console.log(`• ${amount.toLocaleString()} ${base} ≈ ${(amount * rates[cur]).toFixed(2)} ${cur}`);
+          }
+        });
+      }
+    }
+    console.log(`======================================================\n`);
+  } catch (err) {
+    console.error('連線錯誤:', err.message);
+  }
+}
+
+async function convert(amountStr, from, to) {
+  const amount = parseFloat(amountStr);
+  if (isNaN(amount) || !from || !to) {
+    console.log('用法: travel-cli convert <金額> <原始貨幣> <目標貨幣>');
+    console.log('範例: travel-cli convert 10000 JPY TWD');
+    return;
+  }
+  from = from.toUpperCase();
+  to = to.toUpperCase();
+  const url = `https://open.er-api.com/v6/latest/${from}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const rate = data.rates?.[to];
+    if (!rate) {
+      console.log(`查無 ${from} 對 ${to} 的匯率`);
+      return;
+    }
+    const result = (amount * rate).toFixed(2);
+    console.log(`\n💱 貨幣換算結果：`);
+    console.log(`• ${amount.toLocaleString()} ${from} = ${Number(result).toLocaleString()} ${to}`);
+    console.log(`• 當前匯率：1 ${from} = ${rate.toFixed(4)} ${to} (1 ${to} ≈ ${(1 / rate).toFixed(4)} ${from})`);
+    console.log(`• 更新時間：${data.time_last_update_utc}\n`);
+  } catch (err) {
+    console.error('換算失敗:', err.message);
+  }
+}
+
+async function queryBus(city = 'Taipei', route = '307') {
+  try {
+    const token = await getTdxToken();
+    if (!token) {
+      console.log('請先設定 TDX 憑證 (travel-cli tdx)');
+      return;
+    }
+    const url = `https://tdx.transportdata.tw/api/basic/v2/Bus/EstimatedTimeOfArrival/City/${city}/${encodeURIComponent(route)}?$format=JSON&$top=30`;
+    const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (res.status === 429) {
+      console.log('⏳ TDX 請求頻率達到上限，請等待 30 秒後重試。');
+      return;
+    }
+    const list = await res.json();
+    if (!Array.isArray(list) || list.length === 0) {
+      console.log(`在 ${city} 查無路線【${route}】的即時資訊。`);
+      return;
+    }
+    console.log(`\n======================================================`);
+    console.log(`🚌 【${city}】${route} 即時到站動態 (前 15 站)`);
+    console.log(`======================================================`);
+    list.slice(0, 15).forEach((item) => {
+      const stop = (item.StopName?.Zh_tw || '未知站名').padEnd(16);
+      let status = '未發車';
+      if (typeof item.EstimateTime === 'number') {
+        const mins = Math.round(item.EstimateTime / 60);
+        status = mins <= 1 ? '⚡ 即將進站' : `⏳ 約 ${mins} 分鐘`;
+      } else if (item.StopStatus === 1) status = '尚未發車';
+      else if (item.StopStatus === 2) status = '交管不停靠';
+      else if (item.StopStatus === 3) status = '末班車已過';
+      console.log(`• ${stop} : ${status}`);
+    });
+    console.log(`======================================================\n`);
+  } catch (e) {
+    console.error('查詢公車失敗:', e.message);
+  }
+}
+
+async function queryThsr(originName, destName) {
+  try {
+    const token = await getTdxToken();
+    if (!token) {
+      console.log('請先設定 TDX 憑證 (travel-cli tdx)');
+      return;
+    }
+    const url = 'https://tdx.transportdata.tw/api/basic/v2/Rail/THSR/DailyTimetable/Today?$format=JSON';
+    const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (res.status === 429) {
+      console.log('⏳ TDX 請求頻率達到上限，請等待 30 秒後重試。');
+      return;
+    }
+    const list = await res.json();
+    if (!Array.isArray(list)) {
+      console.log('查詢高鐵失敗:', list);
+      return;
+    }
+
+    const norm = (s) => String(s || '').replace(/\s/g, '').replace(/台/g, '臺').trim();
+    const wantO = norm(originName);
+    const wantD = norm(destName);
+    const hit = (stationName, want) => {
+      const n = norm(stationName);
+      return n === want || n.includes(want) || want.includes(n);
+    };
+
+    const rows = [];
+    for (const t of list) {
+      const info = t.DailyTrainInfo || {};
+      const stops = t.StopTimes || [];
+      let idxO = -1;
+      let idxD = -1;
+      if (wantO) {
+        idxO = stops.findIndex((s) => hit(s.StationName?.Zh_tw, wantO));
+        if (idxO < 0) continue;
+      } else {
+        idxO = 0;
+      }
+      if (wantD) {
+        idxD = stops.findIndex((s) => hit(s.StationName?.Zh_tw, wantD));
+        if (idxD < 0) continue;
+      } else {
+        idxD = stops.length - 1;
+      }
+      if (idxD <= idxO) continue;
+      const toM = (s) => { const [h, m] = String(s || '0:0').split(':').map(Number); return h * 60 + (m || 0); };
+      let d = toM(stops[idxD].ArrivalTime) - toM(stops[idxO].DepartureTime);
+      if (d < 0) d += 1440;
+      const dirText = info.Direction === 0 ? '南下' : '北上';
+      rows.push({
+        train: info.TrainNo,
+        dir: dirText,
+        from: stops[idxO].StationName?.Zh_tw,
+        to: stops[idxD].StationName?.Zh_tw,
+        dep: stops[idxO].DepartureTime,
+        arr: stops[idxD].ArrivalTime,
+        dur: d ? `${Math.floor(d / 60) ? Math.floor(d / 60) + ' 小時 ' : ''}${d % 60} 分` : '',
+      });
+    }
+    rows.sort((a, b) => String(a.dep || '').localeCompare(String(b.dep || '')));
+
+    console.log(`\n======================================================`);
+    console.log(
+      wantO && wantD
+        ? `🚄 高鐵 ${originName} ➜ ${destName}（今日 ${rows.length} 班直達）`
+        : `🚄 台灣高鐵 (THSR) 今日車次（共 ${rows.length} 班）`
+    );
+    console.log(`======================================================`);
+    if (!rows.length) {
+      console.log('⚠️ 查無此區間的直達車次。站名例：南港、臺北、板橋、桃園、新竹、苗栗、臺中、彰化、雲林、嘉義、臺南、左營');
+    } else {
+      rows.slice(0, 60).forEach((r) => {
+        console.log(`• ${r.dep} ${r.from} → ${r.arr} ${r.to}（車次 ${r.train}，[${r.dir}]，${r.dur}）`);
+      });
+      if (rows.length > 60) console.log(`…其餘 ${rows.length - 60} 班省略`);
+    }
+    console.log(`======================================================\n`);
+  } catch (e) {
+    console.error('查詢高鐵失敗:', e.message);
+  }
+}
+
+async function queryWeather(city = 'Taipei') {
+  console.log(`\n======================================================`);
+  console.log(`🌤️ 【${city}】即時氣象報告`);
+  console.log(`======================================================`);
+  try {
+    const url = `https://wttr.in/${encodeURIComponent(city)}?format=j1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'curl/8.0' } });
+    if (!res.ok) {
+      console.log(`無法取得 ${city} 的天氣資訊`);
+      return;
+    }
+    const data = await res.json();
+    const cur = data.current_condition?.[0];
+    if (cur) {
+      const temp = cur.temp_C;
+      const feels = cur.FeelsLikeC;
+      const humidity = cur.humidity;
+      const desc = cur.weatherDesc?.[0]?.value || '晴時多雲';
+      const rain = cur.precipMM;
+      console.log(`• 當前氣候：${desc}`);
+      console.log(`• 即時氣溫：${temp} °C (體感溫度: ${feels} °C)`);
+      console.log(`• 相對濕度：${humidity} %`);
+      console.log(`• 降雨量　：${rain} mm`);
+    }
+    const today = data.weather?.[0];
+    if (today) {
+      console.log(`• 今日溫差：最高溫 ${today.maxtempC} °C / 最低溫 ${today.mintempC} °C`);
+    }
+  } catch (e) {
+    console.error('查詢天氣失敗:', e.message);
+  }
+  console.log(`======================================================\n`);
+}
+
+async function calculateRoute(origin, destination, mode = 'DRIVE') {
+  const key = cfg.googleMapsApiKey || process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) {
+    console.log('⚠️ 尚未設定 Google Maps API Key。');
+    return;
+  }
+  const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.description,routes.legs.steps.navigationInstruction,routes.legs.steps.localizedValues'
+      },
+      body: JSON.stringify({
+        origin: { address: origin },
+        destination: { address: destination },
+        travelMode: mode.toUpperCase(),
+        routingPreference: mode.toUpperCase() === 'DRIVE' ? 'TRAFFIC_AWARE' : undefined
+      })
+    });
+    const data = await res.json();
+    const r = data.routes?.[0];
+    if (!r) {
+      console.log('查無路線方案:', data);
+      return;
+    }
+    const mins = Math.round(parseInt(r.duration) / 60);
+    const km = (r.distanceMeters / 1000).toFixed(1);
+    console.log(`\n======================================================`);
+    console.log(`🗺️ 交通路線規劃 (Google Routes API 新版)`);
+    console.log(`起點: ${origin} ➜ 終點: ${destination}`);
+    console.log(`模式: ${mode} | 距離: ${km} 公里 | 預估時間: ${mins} 分鐘`);
+    if (r.description) console.log(`主要路段: ${r.description}`);
+    console.log(`======================================================`);
+    if (r.legs?.[0]?.steps) {
+      console.log('主要導航指示:');
+      r.legs[0].steps.slice(0, 6).forEach((s, idx) => {
+        if (s.navigationInstruction?.instructions) {
+          const dist = s.localizedValues?.distance?.text || '';
+          console.log(` ${idx + 1}. ${s.navigationInstruction.instructions} (${dist})`);
+        }
+      });
+    }
+    console.log(`======================================================\n`);
+  } catch (err) {
+    console.error('路線查詢失敗:', err.message);
+  }
+}
+
+async function checkTdx() {
+  console.log(`\n======================================================`);
+  console.log(`🚆 台灣交通 (TDX 運輸資料流通服務) 連線檢查`);
+  console.log(`======================================================`);
+  try {
+    const token = await getTdxToken();
+    if (token) {
+      console.log(`✅ TDX 認證成功！已成功連線並取得授權憑證。`);
+      console.log(`Client ID: ${cfg.tdx.clientId}`);
+      console.log(`憑證已快取於本機 (有效期 24 小時)。全台公車即時動態、台鐵、高鐵時刻表查詢已就緒。`);
+    } else {
+      console.log(`⚠️ 尚未設定 TDX Client ID 與 Client Secret。`);
+    }
+  } catch (e) {
+    console.log(`❌ 認證失敗：${e.message}`);
+  }
+  console.log(`======================================================\n`);
+}
+
+function showHelp() {
+  console.log(`
+🧭 Travel & Transit CLI 工具 (航班比價、外幣匯率、台灣交通與氣象)
+
+✈️ 機票航班比價 (Duffel)：
+  travel-cli flight <出發> <抵達> [日期]       搜尋航班、優惠票價與比價
+                                              例如: travel-cli flight TPE NRT 2026-12-05
+                                              例如: travel-cli flight 台北 大阪 2026-12-10
+
+💰 匯率功能：
+  travel-cli rate [貨幣] [金額]               查詢即時外幣匯率（預設以 TWD 為基準）
+                                              例如: travel-cli rate JPY 10000
+  travel-cli convert <金額> <幣別1> <幣別2>    精確換算兩國貨幣
+                                              例如: travel-cli convert 50000 JPY TWD
+
+🌤️ 天氣功能：
+  travel-cli weather [城市]                   查詢全球任意城市即時氣候與溫差
+                                              例如: travel-cli weather 台北
+                                              例如: travel-cli weather Tokyo
+
+🚆 交通功能 (TDX)：
+  travel-cli bus <縣市英文> <公車路線>        查詢縣市公車即時到站動態
+                                              例如: travel-cli bus Taipei 307
+                                              例如: travel-cli bus NewTaipei 965
+  travel-cli thsr [出發站] [抵達站]           查詢高鐵班次（如：travel-cli thsr 台北 左營）
+
+🔧 系統設定：
+  travel-cli tdx                              檢查 TDX 認證狀態
+`);
+}
+
+switch (command) {
+  case 'flight':
+  case 'flights':
+    queryFlight(args[1], args[2], args[3]);
+    break;
+  case 'route':
+  case 'routes':
+    calculateRoute(args[1] || '台北市立麗山高中', args[2] || '台北市立松山高中', args[3] || 'DRIVE');
+    break;
+  case 'rate':
+  case 'rates':
+    showRates(args[1] || 'TWD', args[2], parseFloat(args[3]) || 1);
+    break;
+  case 'convert':
+    convert(args[1], args[2], args[3]);
+    break;
+  case 'weather':
+    queryWeather(args[1] || 'Taipei');
+    break;
+  case 'bus':
+    queryBus(args[1] || 'Taipei', args[2] || '307');
+    break;
+  case 'thsr':
+  case 'hsr':
+    queryThsr(args[1], args[2]);
+    break;
+  case 'tdx':
+    checkTdx();
+    break;
+  case 'help':
+  default:
+    showHelp();
+    break;
+}

@@ -44,18 +44,16 @@
 交通部為全台民眾與開發者提供的官方交通雲端資料庫，**註冊完全免費，每天可免費查詢數萬次**。
 
 ### 步驟 1：前往 TDX 官網免費加入會員
-1. 點擊開啟直達網址 👉 **[TDX 運輸資料流通服務官網](https://tdx.transportdata.tw/)**。
-2. 點擊網頁右上角的 **「加入會員」**。
-3. 填寫基本資料（姓名、Email、密碼），點擊「送出」。
-4. 到您的電子信箱收取驗證信，點擊信中的驗證連結啟用帳號。
+1. 點擊開啟直達註冊網址 👉 **[TDX 會員註冊頁面](https://tdx.transportdata.tw/register)**（或至 [TDX 官網](https://tdx.transportdata.tw/) 點右上角「加入會員」）。
+2. 填寫基本資料（姓名、Email、密碼），點擊「送出」。
+3. 到您的電子信箱收取驗證信，點擊信中的驗證連結啟用帳號。
 
 ### 步驟 2：取得專屬的 Client ID 與 Client Secret
-1. 登入 TDX 官網後，點擊右上角您的名字，進入 **「會員中心」**。
-2. 點選左側選單的 **「基本資料」**（或「資料服務」>「金鑰管理」）。
-3. 頁面上會看到兩組字串：
+1. 登入後，點擊直達會員資料頁 👉 **[TDX 會員基本資料頁面](https://tdx.transportdata.tw/user/basic-data)**（或由右上角名字進入「會員中心」>「基本資料」）。
+2. 頁面上會看到兩組字串：
    * **Client ID**（通常格式為：英文字母與數字組成的代碼）
    * **Client Secret**（長串的安全金鑰）
-4. 點擊旁邊的 **「複製」圖示**（或用滑鼠選取複製）。
+3. 點擊旁邊的 **「複製」圖示**（或用滑鼠選取複製）。
 
 ### 步驟 3：叫 Agent 幫您存檔（免動手！）
 把複製下來的兩串字直接貼給您的 Agent：
@@ -73,19 +71,18 @@ Agent 就會自動寫入設定檔，全台公車與高鐵查詢立即生效！
 Duffel 是國際上各大旅行社與比價網站使用的航空資料平台，**可免費註冊測試，能即時比價全世界各大航空公司（包含星宇、長榮、華航、日航、全日空等）**。
 
 ### 步驟 1：前往 Duffel 官網註冊
-1. 點擊開啟直達網址 👉 **[Duffel 註冊頁面 (Sign up)](https://duffel.com/)**。
+1. 點擊開啟直達註冊網址 👉 **[Duffel 官網註冊頁面 (Sign up)](https://duffel.com/)**。
 2. 點擊右上角藍色按鈕 **「Sign up」**。
-3. 輸入您的 Email 與設定密碼（也可以直接點「Sign up with Google」用 Google 帳號一秒登入）。
+3. 輸入您的 Email 與密碼（亦可直接點「Sign up with Google」使用 Google 帳號一秒登入）。
 4. 系統詢問組織名稱（Organization Name）時，隨意填寫即可（例如填寫：`Teacher Travel` 或學校英文簡稱）。
 
 ### 步驟 2：建立並複製 Access Token 金鑰
-1. 登入後，進入 Duffel 後台儀表板（Dashboard）。
-2. 在左側側邊欄點選 **「Access tokens」**（或「API Keys」）。
-3. 點擊右上角的 **「Create token」** 按鈕。
-4. 名稱隨意輸入（例如：`my-agent`），權限保持預設，點擊「Create」。
-5. 畫面上會跳出一串以 `duffel_test_` 開頭的長串密鑰。
-6. 點擊右邊的 **「Copy (複製)」** 按鈕將它複製起來。  
-   *(注意：這串密鑰只會顯示這一次，請立即複製下來)*。
+1. 登入後，點擊直達金鑰儀表板 👉 **[Duffel 後台 Access Tokens 頁面](https://dashboard.duffel.com/)**（登入後點擊左側選單的 **「Access tokens」**）。
+2. 點擊右上角的 **「Generate token」**（或「Create token」）按鈕。
+3. 名稱隨意輸入（例如：`my-agent`），權限保持預設（Read-write），點擊確認建立。
+4. 畫面上會跳出一串以 **`duffel_test_`** 開頭的長串密鑰。
+5. 點擊右邊的 **「Copy (複製)」** 按鈕將它複製起來。  
+   *(注意：Duffel 基於安全考量，這串密鑰只會完整顯示這一次，請立即複製下來)*。
 
 ### 步驟 3：叫 Agent 幫您存檔（免動手！）
 將這串金鑰貼給您的 Agent：
@@ -97,15 +94,20 @@ Agent 就會自動幫您存檔，國際航班比價功能立即開通！
 
 ## 第四部分：Google Maps 景點與路線 API（若已開通 Google 請看這）
 
-如果您之前已經依照 `GOOGLE_API_STEP_BY_STEP_GUIDE.md` 建立了 Google Cloud 專案（Teacher-Agent），只要額外開啟地圖功能即可：
+如果您之前已經依照 `GOOGLE_API_STEP_BY_STEP_GUIDE.md` 建立了 Google Cloud 專案（Teacher-Agent），只要額外開啟以下地圖功能即可：
 
-1. 開啟直達網址 👉 **[Google API 服務庫 (API Library)](https://console.cloud.google.com/apis/library)**。
-2. 搜尋以下兩個 **新版 API**，點進去後按下藍色的 **「啟用 (ENABLE)」**：
-   * 🌟 **`Routes API`**（🔥 **重要避坑**：請搜尋並啟用 `Routes API`，這是 Google 最新一代路線規劃引擎，不要選到舊版的 Directions API 避免發生 legacy 報錯！）
-   * 🌟 **`Places API (New)`**（搜尋全球景點、餐廳、營業時間與評價，請認明有標註 New 的新版）
-3. 開啟直達網址 👉 **[Google 憑證管理頁面](https://console.cloud.google.com/apis/credentials)**。
-4. 看到「API 金鑰 (API Keys)」底下有一把 `API 密鑰`（通常為 `AIzaSy...` 開頭），點擊右邊的「複製金鑰」。
-5. 將它貼給 Agent：
+### 步驟 1：一鍵啟用新版 Google 地圖服務（點連結直接開通）
+請依序點擊以下兩個官方直達連結，點進去後按下藍色的 **「啟用 (ENABLE)」** 按鈕：
+1. 🌟 直達啟用 👉 **[Google Cloud - Routes API 程式庫](https://console.cloud.google.com/apis/library/routes.googleapis.com)**  
+   *(🔥 **重要避坑**：Google 已將舊版 Directions API 下架停售，請務必啟用最新一代 `Routes API`，才能避免發生 LegacyApiNotActivated 報錯！)*
+2. 🌟 直達啟用 👉 **[Google Cloud - Places API (New) 程式庫](https://console.cloud.google.com/apis/library/places.googleapis.com)**  
+   *(搜尋全球景點、餐廳、營業時間與評價，請認明有標註 New 的新版)*
+
+### 步驟 2：複製您的 Google API 金鑰
+1. 點擊開啟直達網址 👉 **[Google 憑證與金鑰管理頁面](https://console.cloud.google.com/apis/credentials)**。
+2. 看到「API 金鑰 (API Keys)」底下有一把 `API 密鑰`（通常為 `AIzaSy...` 開頭），點擊右邊的「複製金鑰」。
+   *(若有設定「API 限制」，請務必記得將 Routes API 與 Places API (New) 勾選進允許清單並儲存)*。
+3. 將它貼給 Agent：
    > 🗣️ **「這是我 Google 的 API Key：[貼上 AIzaSy... 開頭的金鑰]，請幫我啟用 Google Maps 工具！」**
 
 ---

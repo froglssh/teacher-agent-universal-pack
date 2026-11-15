@@ -4,5 +4,6 @@
     "clientSecret": ""
   },
   "exchangeRateApiKey": "",
-  "duffelApiKey": ""
+  "duffelApiKey": "",
+  "googleMapsApiKey": ""
 }

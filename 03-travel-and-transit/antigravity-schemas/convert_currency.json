@@ -1,0 +1,1 @@
+{"name":"convert_currency","description":"精確換算兩國貨幣金額，例如將 50000 日圓(JPY)換算為新台幣(TWD)。","parameters":{"properties":{"amount":{"description":"兌換金額","type":"number"},"from":{"description":"原始貨幣代碼（例如 JPY, USD, EUR）","type":"string"},"to":{"description":"目標貨幣代碼（例如 TWD, USD, JPY）","type":"string"}},"required":["amount","from","to"],"type":"object"}}

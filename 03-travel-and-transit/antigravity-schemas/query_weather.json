@@ -1,0 +1,1 @@
+{"name":"query_weather","description":"查詢台灣各縣市或全球各大城市之即時天氣預報（包含即時氣溫、體感溫度、濕度、降雨量、今日溫差與天候狀況）。","parameters":{"properties":{"city":{"default":"台北","description":"城市名稱或縣市名稱（例如: 台北, 新北, 台中, 高雄, 花蓮, 宜蘭, 東京, 大阪, 首爾, 紐約）","type":"string"}},"required":["city"],"type":"object"}}
