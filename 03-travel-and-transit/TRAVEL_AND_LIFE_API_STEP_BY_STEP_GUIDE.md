@@ -100,9 +100,9 @@ Agent 就會自動幫您存檔，國際航班比價功能立即開通！
 如果您之前已經依照 `GOOGLE_API_STEP_BY_STEP_GUIDE.md` 建立了 Google Cloud 專案（Teacher-Agent），只要額外開啟地圖功能即可：
 
 1. 開啟直達網址 👉 **[Google API 服務庫 (API Library)](https://console.cloud.google.com/apis/library)**。
-2. 搜尋以下兩個 API，點進去後按下藍色的 **「啟用 (ENABLE)」**：
-   * `Places API (New)`（搜尋全球景點、餐廳、營業時間與評價）
-   * `Directions API`（規劃兩地開車、步行與大眾運輸路線時間）
+2. 搜尋以下兩個 **新版 API**，點進去後按下藍色的 **「啟用 (ENABLE)」**：
+   * 🌟 **`Routes API`**（🔥 **重要避坑**：請搜尋並啟用 `Routes API`，這是 Google 最新一代路線規劃引擎，不要選到舊版的 Directions API 避免發生 legacy 報錯！）
+   * 🌟 **`Places API (New)`**（搜尋全球景點、餐廳、營業時間與評價，請認明有標註 New 的新版）
 3. 開啟直達網址 👉 **[Google 憑證管理頁面](https://console.cloud.google.com/apis/credentials)**。
 4. 看到「API 金鑰 (API Keys)」底下有一把 `API 密鑰`（通常為 `AIzaSy...` 開頭），點擊右邊的「複製金鑰」。
 5. 將它貼給 Agent：
